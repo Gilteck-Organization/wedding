@@ -1,0 +1,285 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: 'Montserrat', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-serif: 'Playfair Display', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+    --font-script: 'Great Vibes', cursive;
+
+    /* Flyer primary + harmonious palette */
+    --color-wedding-primary: #946112;
+    --color-wedding-cream: #f8f4ec;
+    --color-wedding-ivory: #fffdf8;
+    --color-wedding-accent: #b8924a;
+    --color-wedding-ink: #2c2418;
+    --color-wedding-muted: #5c4a33;
+}
+
+@layer base {
+    html {
+        scroll-behavior: smooth;
+    }
+
+    .reveal {
+        opacity: 0;
+        transform: translateY(16px);
+        transition: opacity 700ms ease, transform 700ms ease;
+        will-change: opacity, transform;
+    }
+
+    .reveal.is-visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .reveal {
+            transition: none;
+            opacity: 1;
+            transform: none;
+        }
+    }
+
+    /* Home: monogram preloader */
+    .wedding-preloader {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(
+            165deg,
+            var(--color-wedding-ivory) 0%,
+            var(--color-wedding-cream) 45%,
+            color-mix(in srgb, var(--color-wedding-primary) 8%, var(--color-wedding-cream)) 100%
+        );
+        transition:
+            opacity 0.85s ease,
+            visibility 0.85s ease;
+    }
+
+    .wedding-preloader.wedding-preloader--done {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    .wedding-preloader__frame {
+        text-align: center;
+        padding: clamp(2rem, 6vw, 3.5rem) clamp(2rem, 8vw, 4rem);
+        border: 1px solid color-mix(in srgb, var(--color-wedding-primary) 35%, transparent);
+        outline: 1px solid color-mix(in srgb, var(--color-wedding-primary) 18%, transparent);
+        outline-offset: 6px;
+        background: rgba(255, 253, 248, 0.92);
+        box-shadow: 0 28px 60px rgba(44, 36, 24, 0.12);
+        animation: preloader-frame-in 1s ease-out both;
+    }
+
+    .wedding-preloader__eyebrow {
+        font-size: 0.65rem;
+        letter-spacing: 0.35em;
+        text-transform: uppercase;
+        color: var(--color-wedding-muted);
+        margin-bottom: 1.25rem;
+    }
+
+    .wedding-preloader__monogram {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: clamp(0.75rem, 4vw, 1.5rem);
+    }
+
+    .wedding-preloader__letter {
+        font-family: var(--font-serif);
+        font-size: clamp(3.25rem, 14vw, 5rem);
+        font-weight: 600;
+        line-height: 1;
+        color: var(--color-wedding-primary);
+        text-shadow: 0 2px 0 rgba(255, 253, 248, 0.8);
+        animation: preloader-letter-in 0.9s ease-out both;
+    }
+
+    .wedding-preloader__letter:nth-child(3) {
+        animation-delay: 0.12s;
+    }
+
+    .wedding-preloader__divider {
+        width: 1px;
+        height: clamp(3rem, 12vw, 4.5rem);
+        background: linear-gradient(
+            180deg,
+            transparent,
+            color-mix(in srgb, var(--color-wedding-primary) 45%, transparent),
+            transparent
+        );
+        animation: preloader-divider-in 0.8s ease-out 0.2s both;
+    }
+
+    .wedding-preloader__names {
+        margin-top: 1.25rem;
+        font-family: var(--font-script);
+        font-size: clamp(1.5rem, 5vw, 2rem);
+        color: var(--color-wedding-accent);
+        animation: preloader-sub-in 0.8s ease-out 0.35s both;
+    }
+
+    @keyframes preloader-frame-in {
+        from {
+            opacity: 0;
+            transform: scale(0.96) translateY(12px);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+
+    @keyframes preloader-letter-in {
+        from {
+            opacity: 0;
+            transform: translateY(18px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes preloader-divider-in {
+        from {
+            opacity: 0;
+            transform: scaleY(0.3);
+        }
+        to {
+            opacity: 1;
+            transform: scaleY(1);
+        }
+    }
+
+    @keyframes preloader-sub-in {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .wedding-preloader__frame,
+        .wedding-preloader__letter,
+        .wedding-preloader__divider,
+        .wedding-preloader__names {
+            animation: none;
+        }
+    }
+}
+
+@layer utilities {
+    .font-script {
+        font-family: var(--font-script);
+    }
+
+    .green-panel-pattern {
+        /* Subtle luxury pattern similar to premium invitation designs */
+        background-image: radial-gradient(circle at 1px 1px, rgba(212, 175, 55, 0.35) 1px, transparent 0);
+        background-size: 18px 18px;
+        background-position: center;
+    }
+
+    .gold-divider {
+        border-top: 1px solid color-mix(in srgb, var(--color-wedding-primary) 38%, transparent);
+    }
+
+    .premium-stage {
+        background:
+            radial-gradient(circle at 20% 15%, rgba(248, 244, 236, 0.55), transparent 42%),
+            radial-gradient(circle at 85% 85%, rgba(148, 97, 18, 0.12), transparent 42%),
+            linear-gradient(145deg, #f8f4ec 0%, #f0e8dc 45%, #e8dcc8 100%);
+    }
+
+    /* Mobile: soft fade at bottom of flyer column — no hard edge vs content */
+    @media (max-width: 1023px) {
+        .premium-stage--fade-bottom {
+            position: relative;
+            isolation: isolate;
+        }
+
+        .premium-stage--fade-bottom::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: clamp(6rem, 28vw, 12rem);
+            z-index: 2;
+            pointer-events: none;
+            background: linear-gradient(
+                180deg,
+                rgba(248, 244, 236, 0) 0%,
+                rgba(248, 244, 236, 0.35) 28%,
+                rgba(248, 244, 236, 0.78) 62%,
+                var(--color-wedding-cream) 100%
+            );
+        }
+    }
+
+    /* Flyer only — soft depth, no white mat */
+    .flyer-frame {
+        border: none;
+        background: transparent;
+        border-radius: 2px;
+        box-shadow:
+            0 2px 4px rgba(44, 36, 24, 0.06),
+            0 8px 24px rgba(44, 36, 24, 0.1),
+            0 18px 48px rgba(44, 36, 24, 0.08);
+    }
+
+    .wedding-content-panel {
+        border-left: none;
+    }
+
+    /* Mobile: top is transparent so bridge + flyer fade blend — no solid seam */
+    @media (max-width: 1023px) {
+        .wedding-content-panel {
+            background: linear-gradient(
+                180deg,
+                rgba(248, 244, 236, 0) 0%,
+                rgba(248, 244, 236, 0.55) 18%,
+                var(--color-wedding-cream) 38%,
+                var(--color-wedding-ivory) 100%
+            );
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .wedding-content-panel {
+            background: linear-gradient(180deg, var(--color-wedding-cream) 0%, var(--color-wedding-ivory) 100%);
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .wedding-content-panel {
+            border-left: 1px solid color-mix(in srgb, var(--color-wedding-primary) 22%, transparent);
+        }
+    }
+
+    /* Mobile: extra blend strip (works with transparent panel top + premium-stage fade) */
+    .mobile-flyer-content-bridge {
+        background: linear-gradient(
+            180deg,
+            rgba(248, 244, 236, 0) 0%,
+            rgba(248, 244, 236, 0.25) 22%,
+            rgba(248, 244, 236, 0.65) 55%,
+            var(--color-wedding-cream) 88%,
+            var(--color-wedding-cream) 100%
+        );
+    }
+}
