@@ -385,33 +385,39 @@
             linear-gradient(145deg, #f8f4ec 0%, #f0e8dc 45%, #e8dcc8 100%);
     }
 
-    /* Mobile: soft fade at bottom of flyer column — no hard edge vs content */
+    /* Mobile: full-column wash into cream — gradient spans most of the flyer column (overlay above slideshow) */
     @media (max-width: 1023px) {
         .premium-stage--fade-bottom {
             position: relative;
             isolation: isolate;
         }
 
+        .premium-stage--fade-bottom [data-wedding-slideshow] {
+            position: relative;
+            z-index: 1;
+        }
+
         .premium-stage--fade-bottom::after {
             content: '';
             position: absolute;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            height: clamp(6rem, 28vw, 12rem);
+            inset: 0;
             z-index: 2;
             pointer-events: none;
             background: linear-gradient(
                 180deg,
                 rgba(248, 244, 236, 0) 0%,
-                rgba(248, 244, 236, 0.35) 28%,
-                rgba(248, 244, 236, 0.78) 62%,
+                rgba(248, 244, 236, 0) 6%,
+                rgba(248, 244, 236, 0.06) 18%,
+                rgba(248, 244, 236, 0.22) 38%,
+                rgba(248, 244, 236, 0.48) 58%,
+                rgba(248, 244, 236, 0.78) 76%,
+                rgba(248, 244, 236, 0.94) 90%,
                 var(--color-wedding-cream) 100%
             );
         }
     }
 
-    /* Flyer only — soft depth, no white mat */
+    /* Flyer only — soft depth, no white mat (mobile / small screens; desktop hero is flush — see below) */
     .flyer-frame {
         border: none;
         background: transparent;
@@ -420,6 +426,85 @@
             0 2px 4px rgba(44, 36, 24, 0.06),
             0 8px 24px rgba(44, 36, 24, 0.1),
             0 18px 48px rgba(44, 36, 24, 0.08);
+    }
+
+    @media (min-width: 1024px) {
+        #wedding-hero-slideshow.flyer-frame {
+            border-radius: 0;
+            box-shadow: none;
+        }
+    }
+
+    /* Hero slideshow: prefer vertical scroll for the page; horizontal swipe handled in JS */
+    [data-wedding-slideshow] {
+        touch-action: pan-y;
+    }
+
+    /* Home — compact monogram strip; sits above mobile gradient wash */
+    .wedding-hero-header {
+        display: flex;
+        justify-content: center;
+        width: 100%;
+        padding: 0;
+    }
+
+    .wedding-hero-header__frame {
+        width: fit-content;
+        max-width: 100%;
+        text-align: center;
+        padding: 0.35rem 0.55rem 0.4rem;
+        border: 1px solid color-mix(in srgb, var(--color-wedding-primary) 32%, transparent);
+        background: rgba(255, 253, 248, 0.92);
+        box-shadow: 0 4px 14px rgba(44, 36, 24, 0.08);
+    }
+
+    .wedding-hero-header__monogram {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+    }
+
+    .wedding-hero-header__letter {
+        font-family: var(--font-serif);
+        font-size: clamp(1.25rem, 5vw, 1.65rem);
+        font-weight: 600;
+        line-height: 1;
+        color: var(--color-wedding-primary);
+        text-shadow: 0 1px 0 rgba(255, 253, 248, 0.85);
+    }
+
+    .wedding-hero-header__divider {
+        width: 1px;
+        height: 1.35rem;
+        background: linear-gradient(
+            180deg,
+            transparent,
+            color-mix(in srgb, var(--color-wedding-primary) 45%, transparent),
+            transparent
+        );
+    }
+
+    .wedding-hero-header__names {
+        margin-top: 0.2rem;
+        font-family: var(--font-script);
+        font-size: clamp(0.85rem, 3.2vw, 1.05rem);
+        line-height: 1.15;
+        color: var(--color-wedding-accent);
+    }
+
+    @media (min-width: 1024px) {
+        .wedding-hero-header__letter {
+            font-size: 1.5rem;
+        }
+
+        .wedding-hero-header__names {
+            font-size: 1rem;
+        }
+
+        .wedding-hero-header__divider {
+            height: 1.5rem;
+        }
     }
 
     .wedding-content-panel {
@@ -442,12 +527,6 @@
     @media (min-width: 1024px) {
         .wedding-content-panel {
             background: linear-gradient(180deg, var(--color-wedding-cream) 0%, var(--color-wedding-ivory) 100%);
-        }
-    }
-
-    @media (min-width: 1024px) {
-        .wedding-content-panel {
-            border-left: 1px solid color-mix(in srgb, var(--color-wedding-primary) 22%, transparent);
         }
     }
 

@@ -19,13 +19,55 @@
     <div class="w-full min-h-svh">
         <div class="grid grid-cols-1 lg:grid-cols-2 min-h-svh lg:h-screen">
             {{-- Flyer: mobile uses most of the viewport height; desktop stays split --}}
+            @php
+                $heroSlides = [
+                    ['file' => 'slide-1.png', 'alt' => 'Wedding invitation'],
+                    ['file' => 'slide-2.jpeg', 'alt' => 'Wedding invitation'],
+                    ['file' => 'slide-3.jpeg', 'alt' => 'Wedding invitation'],
+                ];
+                $heroSlideCount = count($heroSlides);
+            @endphp
             <div
-                class="premium-stage--fade-bottom relative flex min-h-[min(78svh,720px)] items-center justify-center premium-stage px-3 pt-6 pb-4 sm:px-6 sm:py-10 lg:min-h-svh lg:p-10 xl:p-12">
-                {{-- Same max-height as before; w-auto + max-h scales the whole image (no cover, no empty mat) --}}
-                <div class="flex w-full max-w-[720px] justify-center">
-                    <div class="flyer-frame inline-block max-w-full">
-                        <img src="{{ asset('images/e-invite.jpg') }}" alt="E-invite"
-                            class="mx-auto block h-auto w-auto max-w-full max-h-[min(72svh,620px)] lg:max-h-[min(88vh,720px)]">
+                class="premium-stage--fade-bottom relative flex min-h-[min(78svh,720px)] flex-col premium-stage px-0 pb-4 sm:pb-6 lg:min-h-svh lg:pb-8 xl:pb-10">
+                {{-- Monogram card: absolutely positioned over slideshow (does not reduce image area) --}}
+                <header
+                    class="wedding-hero-header pointer-events-none absolute left-0 right-0 top-0 z-[4]"
+                    role="banner">
+                    <div class="wedding-hero-header__frame pointer-events-auto">
+                        <div class="wedding-hero-header__monogram" aria-hidden="true">
+                            <span class="wedding-hero-header__letter">F</span>
+                            <span class="wedding-hero-header__divider"></span>
+                            <span class="wedding-hero-header__letter">K</span>
+                        </div>
+                        <p class="wedding-hero-header__names">Fifi &amp; Kiki</p>
+                    </div>
+                </header>
+
+                {{-- Hero slideshow: soft frame on small screens only; lg+ = image + premium-stage bg only --}}
+                <div
+                    class="relative z-[1] flex min-h-0 w-full flex-1 flex-col items-center justify-center px-0">
+                    <div id="wedding-hero-slideshow"
+                        class="flyer-frame relative w-full rounded-[2px] lg:rounded-none"
+                        data-wedding-slideshow
+                        data-slideshow-total="{{ $heroSlideCount }}"
+                        aria-label="Wedding invitation images"
+                        aria-live="polite">
+                        <div class="relative w-full overflow-hidden rounded-[2px] lg:rounded-none">
+                            <div class="flex transition-transform duration-700 ease-out motion-reduce:transition-none"
+                                style="width: {{ $heroSlideCount * 100 }}%; transform: translateX(0);"
+                                data-slideshow-track>
+                                @foreach ($heroSlides as $i => $slide)
+                                    <div class="flex shrink-0 items-center justify-center"
+                                        style="flex: 0 0 calc(100% / {{ $heroSlideCount }});">
+                                        <img src="{{ asset('images/'.$slide['file']) }}"
+                                            alt="{{ $slide['alt'] }} — {{ $i + 1 }} of {{ $heroSlideCount }}"
+                                            class="block h-auto w-full max-h-[min(72svh,620px)] object-contain lg:max-h-[min(88vh,720px)]"
+                                            draggable="false"
+                                            @if ($i === 0) fetchpriority="high" decoding="async" @else loading="lazy" decoding="async" @endif>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -134,7 +176,7 @@
                                         @enderror
                                     </div>
 
-                                    @php
+                                    {{-- @php
                                         $partySize = (string) (old('guest_count') ?? '1');
                                     @endphp
                                     <fieldset>
@@ -161,7 +203,7 @@
                                         @error('guest_count')
                                             <p class="mt-2 text-sm text-red-700">{{ $message }}</p>
                                         @enderror
-                                    </fieldset>
+                                    </fieldset> --}}
 
 
                                     <button type="submit" class="btn-wired w-full px-7 py-3.5 text-sm">
