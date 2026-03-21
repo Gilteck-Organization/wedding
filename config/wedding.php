@@ -14,6 +14,15 @@ return [
     ],
 
     /*
+    | Access card QR module color (#3a2c17).
+    */
+    'access_card_qr_rgb' => [
+        'r' => 58,
+        'g' => 44,
+        'b' => 23,
+    ],
+
+    /*
     | Total venue capacity (seats / guests) for the celebration. Used on the admin dashboard.
     */
     'venue_capacity' => (int) env('WEDDING_VENUE_CAPACITY', 350),

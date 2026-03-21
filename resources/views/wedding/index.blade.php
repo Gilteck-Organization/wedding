@@ -24,7 +24,7 @@
                 {{-- Same max-height as before; w-auto + max-h scales the whole image (no cover, no empty mat) --}}
                 <div class="flex w-full max-w-[720px] justify-center">
                     <div class="flyer-frame inline-block max-w-full">
-                        <img src="{{ asset('images/flyer.png') }}" alt="Wedding flyer"
+                        <img src="{{ asset('images/e-invite.jpg') }}" alt="E-invite"
                             class="mx-auto block h-auto w-auto max-w-full max-h-[min(72svh,620px)] lg:max-h-[min(88vh,720px)]">
                     </div>
                 </div>
@@ -33,8 +33,7 @@
             <div
                 class="wedding-content-panel relative flex flex-col px-6 pb-10 pt-0 sm:px-10 sm:pb-12 lg:flex lg:h-screen lg:items-center lg:justify-center lg:overflow-y-auto lg:px-14 lg:py-16 text-wedding-ink">
                 {{-- Mobile: gradient bridge from flyer into cream panel (transparent → cream) --}}
-                <div
-                    class="mobile-flyer-content-bridge pointer-events-none -mt-[4.5rem] mb-0 min-h-[7rem] w-full shrink-0 lg:hidden"
+                <div class="mobile-flyer-content-bridge pointer-events-none -mt-[4.5rem] mb-0 min-h-[7rem] w-full shrink-0 lg:hidden"
                     aria-hidden="true">
                 </div>
 
@@ -42,11 +41,11 @@
                     <div class="text-center">
                         <div class="gold-divider mt-2"></div>
 
-                        <p class="mt-7 font-serif text-base sm:text-base font-semibold text-wedding-primary">
+                        <p class="mt-7 font-serif text-base sm:text-base font-semibold text-wedding-onion">
                             Wedding Ceremony
                         </p>
 
-                        <h1 class="mt-4 font-script text-4xl sm:text-5xl text-wedding-accent leading-none">
+                        <h1 class="mt-4 font-script text-4xl sm:text-5xl text-wedding-champagne leading-none">
                             Fifi &amp; Kiki
                         </h1>
                     </div>
@@ -56,7 +55,7 @@
                             RSVP
                         </h2>
                         <p class="mt-2 text-center text-sm text-wedding-muted">
-                            Kindly respond below. Your details help us plan with care.
+                            Kindly respond below. Strictly by invitation.
                         </p>
 
                         @if (session('rsvp_success'))
@@ -78,73 +77,99 @@
                             </div>
                         @endif
 
-                        <form action="{{ route('rsvp.submit') }}" method="POST"
-                            class="mt-6 border border-wedding-primary/25 bg-wedding-ivory/90 p-6 sm:p-8 shadow-sm">
-                            @csrf
-
-                            <div class="space-y-5">
-                                <div>
-                                    <label class="block text-sm font-medium text-wedding-muted" for="name">Name</label>
-                                    <input id="name" name="name" type="text" value="{{ old('name') }}"
-                                        class="mt-2 w-full border border-wedding-primary/30 bg-white px-4 py-3 text-sm text-wedding-ink outline-none focus:border-wedding-primary focus:ring-1 focus:ring-wedding-primary/40"
-                                        required>
-                                    @error('name')
-                                        <p class="mt-1 text-sm text-red-700">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-wedding-muted" for="phone">Phone</label>
-                                    <input id="phone" name="phone" type="tel" value="{{ old('phone') }}"
-                                        class="mt-2 w-full border border-wedding-primary/30 bg-white px-4 py-3 text-sm text-wedding-ink outline-none focus:border-wedding-primary focus:ring-1 focus:ring-wedding-primary/40"
-                                        required>
-                                    @error('phone')
-                                        <p class="mt-1 text-sm text-red-700">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-wedding-muted"
-                                        for="attendance">Attendance</label>
-                                    <select id="attendance" name="attendance"
-                                        class="mt-2 w-full border border-wedding-primary/30 bg-white px-4 py-3 text-sm text-wedding-ink outline-none focus:border-wedding-primary focus:ring-1 focus:ring-wedding-primary/40"
-                                        required>
-                                        <option value="" disabled @selected(old('attendance') === null)>Select</option>
-                                        <option value="yes" @selected(old('attendance') === 'yes')>Yes</option>
-                                        <option value="no" @selected(old('attendance') === 'no')>No</option>
-                                    </select>
-                                    @error('attendance')
-                                        <p class="mt-1 text-sm text-red-700">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-wedding-muted" for="guest_count">Number
-                                        of guests (optional)</label>
-                                    <input id="guest_count" name="guest_count" type="number" min="1" max="20"
-                                        value="{{ old('guest_count') }}"
-                                        class="mt-2 w-full border border-wedding-primary/30 bg-white px-4 py-3 text-sm text-wedding-ink outline-none focus:border-wedding-primary focus:ring-1 focus:ring-wedding-primary/40">
-                                    @error('guest_count')
-                                        <p class="mt-1 text-sm text-red-700">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                {{-- <div>
-                                    <label class="block text-sm font-medium text-wedding-muted" for="message">Message
-                                        (optional)</label>
-                                    <textarea id="message" name="message" rows="3"
-                                        class="mt-2 w-full border border-wedding-primary/30 bg-white px-4 py-3 text-sm text-wedding-ink outline-none focus:border-wedding-primary focus:ring-1 focus:ring-wedding-primary/40">{{ old('message') }}</textarea>
-                                    @error('message')
-                                        <p class="mt-1 text-sm text-red-700">{{ $message }}</p>
-                                    @enderror
-                                </div> --}}
-
-                                <button type="submit"
-                                    class="w-full border border-[#4a3d2f] bg-gradient-to-b from-[#1c140e] via-[#2a1f12] to-[#3d2e18] px-7 py-3.5 text-sm font-semibold text-[#faf6ef] shadow-[inset_0_1px_0_rgba(255,248,235,0.12),0_2px_6px_rgba(44,32,18,0.22)] transition hover:from-[#241a12] hover:via-[#322618] hover:to-[#4a3820] hover:shadow-[inset_0_1px_0_rgba(255,248,235,0.14),0_3px_8px_rgba(44,32,18,0.28)] active:translate-y-px">
-                                    Submit RSVP
-                                </button>
+                        @if ($rsvpCapacityReached)
+                            <div
+                                class="mt-6 border border-wedding-primary/30 bg-wedding-ivory/95 px-6 py-8 text-center shadow-sm sm:px-10">
+                                <p class="font-serif text-lg font-semibold text-wedding-primary">
+                                    You’re so welcome here.
+                                </p>
+                                <p class="mt-4 text-sm leading-relaxed text-wedding-muted">
+                                    Every seat for our celebration has been lovingly spoken for. We’re grateful you
+                                    wanted to share the day with us — thank you for your kindness and understanding.
+                                </p>
+                                <p class="mt-5 font-serif text-sm font-medium text-wedding-onion">
+                                    With love, Fifi &amp; Kiki
+                                </p>
                             </div>
-                        </form>
+                        @else
+                            <form action="{{ route('rsvp.submit') }}" method="POST"
+                                class="font-serif mt-6 border border-wedding-primary/25 bg-wedding-ivory/90 p-6 sm:p-8 shadow-sm">
+                                @csrf
+
+                                <div class="space-y-5">
+                                    <div>
+                                        <label class="block text-sm font-medium normal-case text-wedding-muted"
+                                            for="name">Name</label>
+                                        <input id="name" name="name" type="text" value="{{ old('name') }}"
+                                            class="mt-2 w-full border border-wedding-primary/30 bg-white px-4 py-3 text-sm text-wedding-ink outline-none focus:border-wedding-onion focus:ring-1 focus:ring-wedding-onion/40"
+                                            required>
+                                        @error('name')
+                                            <p class="mt-1 text-sm text-red-700">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-medium normal-case text-wedding-muted"
+                                            for="phone">Whatsapp Number</label>
+                                        <input id="phone" name="phone" type="tel" value="{{ old('phone') }}"
+                                            class="mt-2 w-full border border-wedding-primary/30 bg-white px-4 py-3 text-sm text-wedding-ink outline-none focus:border-wedding-onion focus:ring-1 focus:ring-wedding-onion/40"
+                                            required>
+                                        @error('phone')
+                                            <p class="mt-1 text-sm text-red-700">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-medium normal-case text-wedding-muted"
+                                            for="attendance">Attendance</label>
+                                        <select id="attendance" name="attendance"
+                                            class="mt-2 w-full border border-wedding-primary/30 bg-white px-4 py-3 text-sm text-wedding-ink outline-none focus:border-wedding-onion focus:ring-1 focus:ring-wedding-onion/40"
+                                            required>
+                                            <option value="" disabled @selected(old('attendance') === null)>Select</option>
+                                            <option value="yes" @selected(old('attendance') === 'yes')>Yes</option>
+                                            <option value="no" @selected(old('attendance') === 'no')>No</option>
+                                        </select>
+                                        @error('attendance')
+                                            <p class="mt-1 text-sm text-red-700">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+
+                                    @php
+                                        $partySize = (string) (old('guest_count') ?? '1');
+                                    @endphp
+                                    <fieldset>
+                                        <legend class="block text-sm font-medium normal-case text-wedding-muted">
+                                            Guest
+                                        </legend>
+                                        <div class="mt-3 space-y-2 flex md:flex-row flex-col gap-2 w-full">
+                                            <label
+                                                class="flex cursor-pointer w-full items-start gap-3 border border-wedding-primary/25 bg-white px-4 py-3 text-sm text-wedding-ink transition has-[:checked]:border-wedding-onion has-[:checked]:ring-1 has-[:checked]:ring-wedding-onion/35">
+                                                <input type="radio" name="guest_count" value="1" required
+                                                    @checked($partySize === '1')
+                                                    class="mt-1 size-4 shrink-0 border-wedding-primary/40 accent-wedding-onion focus:outline-none focus:ring-2 focus:ring-wedding-onion/35 focus:ring-offset-0">
+                                                <span class="normal-case leading-snug">Just me</span>
+                                            </label>
+                                            <label
+                                                class="flex cursor-pointer w-full items-start gap-3 border border-wedding-primary/25 bg-white px-4 py-3 text-sm text-wedding-ink transition has-[:checked]:border-wedding-onion has-[:checked]:ring-1 has-[:checked]:ring-wedding-onion/35">
+                                                <input type="radio" name="guest_count" value="2"
+                                                    @checked($partySize === '2')
+                                                    class="mt-1 size-4 shrink-0 border-wedding-primary/40 accent-wedding-onion focus:outline-none focus:ring-2 focus:ring-wedding-onion/35 focus:ring-offset-0">
+                                                <span class="normal-case leading-snug">Me and one guest
+                                                </span>
+                                            </label>
+                                        </div>
+                                        @error('guest_count')
+                                            <p class="mt-2 text-sm text-red-700">{{ $message }}</p>
+                                        @enderror
+                                    </fieldset>
+
+
+                                    <button type="submit" class="btn-wired w-full px-7 py-3.5 text-sm">
+                                        <span class="btn-wired__text">Submit RSVP</span>
+                                    </button>
+                                </div>
+                            </form>
+                        @endif
                     </section>
 
                     <div class="mt-10 text-center">

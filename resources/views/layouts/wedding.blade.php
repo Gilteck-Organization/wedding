@@ -9,7 +9,7 @@
         {{-- Wedding fonts --}}
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link
-            href="https://fonts.bunny.net/css?family=montserrat:400,500,600|playfair-display:400,500,600,700|cormorant-garamond:400,500,600,700|great-vibes:400"
+            href="https://fonts.bunny.net/css?family=montserrat:400,500,600|cinzel-decorative:400,700|playfair-display:400,500,600,700|cormorant-garamond:400,500,600,700|great-vibes:400"
             rel="stylesheet"
         />
 

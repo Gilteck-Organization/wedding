@@ -8,7 +8,7 @@
 @theme {
     --font-sans: 'Montserrat', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
-    --font-serif: 'Playfair Display', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+    --font-serif: 'Cinzel Decorative', 'Playfair Display', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
     --font-script: 'Great Vibes', cursive;
 
     /* Flyer primary + harmonious palette */
@@ -18,11 +18,21 @@
     --color-wedding-accent: #b8924a;
     --color-wedding-ink: #2c2418;
     --color-wedding-muted: #5c4a33;
+    --color-wedding-button: #803b48;
+    /* Deep burgundy / “onion” (matches primary actions) */
+    --color-wedding-onion: #803b48;
+    /* Warm champagne gold for script headings */
+    --color-wedding-champagne: #3a2c17;
 }
 
 @layer base {
     html {
         scroll-behavior: smooth;
+    }
+
+    /* Native radio fill (Chrome / Safari / Firefox) — Tailwind accent-* may not emit for all theme keys */
+    input[type='radio'][name='guest_count'] {
+        accent-color: var(--color-wedding-onion);
     }
 
     .reveal {
@@ -179,6 +189,176 @@
         .wedding-preloader__names {
             animation: none;
         }
+    }
+}
+
+@layer components {
+    /* Primary actions + wire-style loading (see resources/js/app.js) */
+    .btn-wired {
+        --btn-spinner-track: color-mix(in srgb, #fffdf8 40%, transparent);
+        --btn-spinner-head: #fffdf8;
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0;
+        border: 1px solid color-mix(in srgb, var(--color-wedding-button) 55%, #1a0a0d);
+        background-color: var(--color-wedding-button);
+        color: #fffdf8;
+        font-weight: 600;
+        line-height: 1.25;
+        box-shadow: 0 2px 8px rgba(128, 59, 72, 0.28);
+        transition:
+            transform 0.15s ease,
+            background-color 0.15s ease,
+            box-shadow 0.15s ease,
+            border-color 0.15s ease;
+    }
+
+    .btn-wired:hover:not(:disabled):not(.is-loading) {
+        background-color: color-mix(in srgb, var(--color-wedding-button) 88%, #000);
+        box-shadow: 0 3px 10px rgba(128, 59, 72, 0.32);
+    }
+
+    .btn-wired:active:not(:disabled):not(.is-loading) {
+        transform: translateY(1px);
+    }
+
+    .btn-wired:focus-visible {
+        outline: 2px solid color-mix(in srgb, var(--color-wedding-button) 65%, #fff);
+        outline-offset: 2px;
+    }
+
+    .btn-wired:disabled {
+        cursor: not-allowed;
+        opacity: 0.9;
+    }
+
+    .btn-wired.is-loading .btn-wired__text {
+        opacity: 0;
+    }
+
+    .btn-wired.is-loading::after {
+        content: '';
+        position: absolute;
+        width: 1.25rem;
+        height: 1.25rem;
+        border: 2px solid var(--btn-spinner-track);
+        border-top-color: var(--btn-spinner-head);
+        border-radius: 50%;
+        animation: btn-wired-spin 0.65s linear infinite;
+    }
+
+    @keyframes btn-wired-spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .btn-wired.is-loading::after {
+            animation: none;
+            opacity: 0.85;
+        }
+    }
+
+    .btn-wired--outline {
+        background-color: color-mix(in srgb, #fffdf8 92%, transparent);
+        color: var(--color-wedding-button);
+        border-color: color-mix(in srgb, var(--color-wedding-button) 42%, transparent);
+        box-shadow: 0 1px 4px rgba(44, 36, 24, 0.08);
+        --btn-spinner-track: color-mix(in srgb, var(--color-wedding-button) 30%, transparent);
+        --btn-spinner-head: var(--color-wedding-button);
+    }
+
+    .btn-wired--outline:hover:not(:disabled):not(.is-loading) {
+        background-color: color-mix(in srgb, var(--color-wedding-button) 10%, #fffdf8);
+        border-color: color-mix(in srgb, var(--color-wedding-button) 55%, transparent);
+    }
+
+    /*
+     * Access card — overlay on template image (see resources/views/wedding/access-card.blade.php).
+     * Template file: public/images/access card-temp.jpg
+     *
+     * Adjust ONLY the custom properties on .access-card-stage to move/size QR, name, and extras.
+     * top/left use % of card; --access-qr-size is the QR square (physical print size on screen ≈ same).
+     */
+    .access-card-stage {
+        position: relative;
+        width: 100%;
+        max-width: min(100vw - 1.5rem, 420px);
+        margin-inline: auto;
+
+        --access-qr-top: 75%;
+        --access-qr-left: 28%;
+        --access-qr-transform: translate(-50%, -50%);
+        --access-qr-size: 1.8cm;
+
+        --access-name-top: 58%;
+        --access-name-left: 50%;
+        --access-name-transform: translate(-50%, 0);
+        --access-name-max-width: 88%;
+
+        --access-notice-top: 50%;
+        --access-notice-left: 50%;
+        --access-notice-transform: translate(-50%, -50%);
+        --access-notice-max-width: 85%;
+    }
+
+    .access-card-stage__art {
+        display: block;
+        width: 100%;
+        height: auto;
+        user-select: none;
+    }
+
+    .access-card-stage__qr {
+        position: absolute;
+        top: var(--access-qr-top);
+        left: var(--access-qr-left);
+        transform: var(--access-qr-transform);
+        width: var(--access-qr-size);
+        height: var(--access-qr-size);
+        max-width: min(var(--access-qr-size), 100%);
+        max-height: min(var(--access-qr-size), 100%);
+    }
+
+    .access-card-stage__qr-inner {
+        display: flex;
+        width: 100%;
+        height: 100%;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .access-card-stage__qr-inner svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
+    /* Guest name + plus-one lines stacked (no separate absolute blocks = no big gap) */
+    .access-card-stage__guest-details {
+        position: absolute;
+        top: var(--access-name-top);
+        left: var(--access-name-left);
+        transform: var(--access-name-transform);
+        width: min(100%, var(--access-name-max-width));
+        max-width: var(--access-name-max-width);
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0;
+    }
+
+    .access-card-stage__notice {
+        position: absolute;
+        top: var(--access-notice-top);
+        left: var(--access-notice-left);
+        transform: var(--access-notice-transform);
+        width: min(100%, var(--access-notice-max-width));
+        max-width: var(--access-notice-max-width);
     }
 }
 

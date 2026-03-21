@@ -20,7 +20,7 @@
                 </div>
             @endif
 
-            <form action="{{ route('login') }}" method="POST" class="mt-8 space-y-5">
+            <form action="{{ route('login') }}" method="POST" class="font-serif mt-8 space-y-5">
                 @csrf
 
                 <div>
@@ -43,9 +43,8 @@
                     <label for="remember" class="text-sm text-[#2c2418]/80">Remember me</label>
                 </div>
 
-                <button type="submit"
-                    class="w-full border border-[#946112]/50 bg-[#946112] px-4 py-3 text-sm font-semibold text-[#fffdf8] shadow-sm transition hover:bg-[#7a5110]">
-                    Sign in
+                <button type="submit" class="btn-wired w-full px-4 py-3 text-sm">
+                    <span class="btn-wired__text">Sign in</span>
                 </button>
             </form>
         </div>

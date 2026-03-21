@@ -18,10 +18,7 @@ class AdminDashboardController extends Controller
         $attendanceYes = Rsvp::query()->where('attendance', 'yes')->count();
         $attendanceNo = Rsvp::query()->where('attendance', 'no')->count();
 
-        $seatsReserved = (int) Rsvp::query()
-            ->where('attendance', 'yes')
-            ->get()
-            ->sum(fn (Rsvp $rsvp): int => $rsvp->guest_count ?? 1);
+        $seatsReserved = Rsvp::reservedSeatTotal();
 
         $remainingSlots = max(0, $capacity - $seatsReserved);
 

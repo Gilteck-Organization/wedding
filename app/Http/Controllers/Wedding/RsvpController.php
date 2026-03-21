@@ -5,19 +5,49 @@ namespace App\Http\Controllers\Wedding;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreRsvpRequest;
 use App\Models\Rsvp;
+use Illuminate\Http\RedirectResponse;
 
 class RsvpController extends Controller
 {
-    public function store(StoreRsvpRequest $request): \Illuminate\Http\RedirectResponse
+    public function store(StoreRsvpRequest $request): RedirectResponse
     {
         $validated = $request->validated();
+
+        $capacity = (int) config('wedding.venue_capacity');
+        $reserved = Rsvp::reservedSeatTotal();
+
+        if ($reserved >= $capacity) {
+            return redirect()
+                ->route('wedding.home')
+                ->withFragment('rsvp')
+                ->withErrors([
+                    'capacity' => 'RSVP is closed — our guest list is full. Thank you for thinking of us.',
+                ]);
+        }
+
+        if ($validated['attendance'] === 'yes') {
+            $requestedSeats = (int) $validated['guest_count'];
+            if ($reserved + $requestedSeats > $capacity) {
+                return redirect()
+                    ->route('wedding.home')
+                    ->withFragment('rsvp')
+                    ->withInput()
+                    ->withErrors([
+                        'capacity' => 'Not enough seats left for your party size. Try “Just me” or contact the hosts.',
+                    ]);
+            }
+        }
+
+        $guestCount = $validated['attendance'] === 'yes'
+            ? (int) $validated['guest_count']
+            : null;
 
         $rsvp = Rsvp::create([
             'guest_id' => null,
             'name' => $validated['name'],
             'phone' => $validated['phone'],
             'attendance' => $validated['attendance'],
-            'guest_count' => $validated['guest_count'] ?? null,
+            'guest_count' => $guestCount,
             'message' => $validated['message'] ?? null,
         ]);
 

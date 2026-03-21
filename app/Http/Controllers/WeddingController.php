@@ -2,12 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Models\Rsvp;
+use Illuminate\View\View;
 
 class WeddingController extends Controller
 {
-    public function index(): \Illuminate\View\View
+    public function index(): View
     {
-        return view('wedding.index');
+        $capacity = (int) config('wedding.venue_capacity');
+        $seatsReserved = Rsvp::reservedSeatTotal();
+        $rsvpCapacityReached = $seatsReserved >= $capacity;
+
+        return view('wedding.index', [
+            'rsvpCapacityReached' => $rsvpCapacityReached,
+        ]);
     }
 }

@@ -5,13 +5,14 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Guest;
 use App\Models\Rsvp;
-use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class RsvpAdminController extends Controller
 {
-    public function index(): \Illuminate\View\View
+    public function index(): View
     {
         $rsvps = Rsvp::with('guest')
             ->orderByDesc('created_at')
@@ -22,7 +23,7 @@ class RsvpAdminController extends Controller
         ]);
     }
 
-    public function approve(Rsvp $rsvp): \Illuminate\Http\RedirectResponse
+    public function approve(Rsvp $rsvp): RedirectResponse
     {
         DB::transaction(function () use ($rsvp): void {
             $guest = $rsvp->guest;
@@ -39,7 +40,9 @@ class RsvpAdminController extends Controller
                 $guest->save();
             }
 
-            $accessCardUrl = rtrim(config('app.url'), '/') . '/access-card/' . $guest->id;
+            $guest->refresh();
+
+            $accessCardUrl = route('access-card.verify', $guest);
 
             $guest->update([
                 'qr_code' => $accessCardUrl,
@@ -47,12 +50,40 @@ class RsvpAdminController extends Controller
             ]);
 
             $rsvp->guest_id = $guest->id;
+
+            if ($rsvp->attendance === 'no') {
+                $rsvp->attendance = 'yes';
+                $rsvp->guest_count = $rsvp->guest_count ?? 1;
+            }
+
             $rsvp->save();
         });
 
         return redirect()
             ->route('admin.rsvps.index')
             ->with('success', 'Guest approved. Access card link is ready.');
+    }
+
+    public function revokeAttendance(Rsvp $rsvp): RedirectResponse
+    {
+        DB::transaction(function () use ($rsvp): void {
+            $rsvp->update([
+                'attendance' => 'no',
+                'guest_count' => null,
+            ]);
+
+            $guest = $rsvp->guest;
+            if ($guest !== null) {
+                $guest->update([
+                    'is_approved' => false,
+                    'qr_code' => null,
+                ]);
+            }
+        });
+
+        return redirect()
+            ->route('admin.rsvps.index')
+            ->with('success', 'Attendance revoked for '.$rsvp->name.'. Access card is no longer valid.');
     }
 
     public function exportCsv(): StreamedResponse

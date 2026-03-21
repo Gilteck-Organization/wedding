@@ -26,8 +26,19 @@ class StoreRsvpRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'string', 'max:32'],
             'attendance' => ['required', 'in:yes,no'],
-            'guest_count' => ['nullable', 'integer', 'min:1', 'max:20'],
+            'guest_count' => ['required_if:attendance,yes', 'nullable', 'integer', 'in:1,2'],
             'message' => ['nullable', 'string', 'max:1000'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'guest_count.required_if' => 'Please choose how many people are in your party.',
+            'guest_count.in' => 'Each invitation includes you and at most one guest (2 people total).',
         ];
     }
 }

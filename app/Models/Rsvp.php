@@ -30,4 +30,15 @@ class Rsvp extends Model
     {
         return $this->belongsTo(Guest::class);
     }
+
+    /**
+     * Sum of seats for RSVPs attending (each row counts guest_count, defaulting to 1).
+     */
+    public static function reservedSeatTotal(): int
+    {
+        return (int) static::query()
+            ->where('attendance', 'yes')
+            ->get()
+            ->sum(fn (self $rsvp): int => $rsvp->guest_count ?? 1);
+    }
 }

@@ -1,6 +1,38 @@
 import './bootstrap';
 
 document.addEventListener('DOMContentLoaded', () => {
+    /** Wire-style loading: disable submit + spinner on forms using .btn-wired */
+    document.addEventListener(
+        'submit',
+        (event) => {
+            const form = event.target;
+            if (!(form instanceof HTMLFormElement)) {
+                return;
+            }
+            if (form.dataset.noWiredLoading === 'true') {
+                return;
+            }
+
+            let button =
+                event.submitter instanceof HTMLButtonElement && event.submitter.type === 'submit'
+                    ? event.submitter
+                    : form.querySelector('button[type="submit"]');
+
+            if (!(button instanceof HTMLButtonElement) || !button.classList.contains('btn-wired')) {
+                return;
+            }
+
+            if (button.disabled || button.classList.contains('is-loading')) {
+                return;
+            }
+
+            button.disabled = true;
+            button.classList.add('is-loading');
+            button.setAttribute('aria-busy', 'true');
+        },
+        true
+    );
+
     const preloader = document.getElementById('wedding-preloader');
     if (preloader) {
         const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
