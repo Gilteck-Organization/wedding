@@ -87,10 +87,10 @@
                                     Thank you for your response. We have received your RSVP. You will receive your
                                     access card shortly before the event. Looking forward to celebrating with you.
                                 </p>
-                                <a href="{{ route('wedding.home') }}?rsvp=form#rsvp"
+                                {{-- <a href="{{ route('wedding.home') }}?rsvp=form#rsvp"
                                     class="btn-wired mt-7 inline-flex px-8 py-3 text-sm">
                                     <span class="btn-wired__text">RSVP</span>
-                                </a>
+                                </a> --}}
                             </div>
                         @else
                             <p class="mt-2 text-center text-sm text-wedding-muted">
@@ -172,14 +172,15 @@
                                     </div>
                                 </form>
                             @endif
+                            <div class="mt-10 text-center">
+                                <p class="text-sm text-wedding-muted">
+                                    We look forward to celebrating with you.
+                                </p>
+                            </div>
                         @endif
                     </section>
 
-                    <div class="mt-10 text-center">
-                        <p class="text-sm text-wedding-muted">
-                            We look forward to celebrating with you.
-                        </p>
-                    </div>
+
                 </div>
             </div>
         </div>
