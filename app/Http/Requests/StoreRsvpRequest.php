@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreRsvpRequest extends FormRequest
 {
@@ -24,9 +25,19 @@ class StoreRsvpRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'phone' => ['required', 'string', 'max:32'],
+            'phone' => ['required', 'string', 'max:32', Rule::unique('rsvps', 'phone')],
             'attendance' => ['required', 'in:yes,no'],
             'message' => ['nullable', 'string', 'max:1000'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'phone.unique' => 'This phone number has already RSVP’d.',
         ];
     }
 }

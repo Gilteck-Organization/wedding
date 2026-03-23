@@ -14,6 +14,9 @@ Route::get('/', [WeddingController::class, 'index'])->name('wedding.home');
 
 Route::redirect('/rsvp', '/#rsvp', 302)->name('rsvp.form');
 Route::post('/rsvp', [RsvpController::class, 'store'])->name('rsvp.submit');
+Route::get('/rsvp/phone-availability', [RsvpController::class, 'phoneAvailability'])
+    ->middleware('throttle:60,1')
+    ->name('rsvp.phone-availability');
 Route::redirect('/rsvp/confirmation', '/#rsvp', 302)->name('rsvp.confirmation');
 
 Route::get('/access-card/{guest}', [AccessCardController::class, 'show'])

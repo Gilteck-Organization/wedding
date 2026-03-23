@@ -5,10 +5,24 @@ namespace App\Http\Controllers\Wedding;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreRsvpRequest;
 use App\Models\Rsvp;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
 class RsvpController extends Controller
 {
+    public function phoneAvailability(Request $request): JsonResponse
+    {
+        $phone = trim((string) $request->query('phone', ''));
+        if ($phone === '') {
+            return response()->json(['available' => true]);
+        }
+
+        $exists = Rsvp::query()->where('phone', $phone)->exists();
+
+        return response()->json(['available' => ! $exists]);
+    }
+
     public function store(StoreRsvpRequest $request): RedirectResponse
     {
         $validated = $request->validated();

@@ -1,6 +1,121 @@
 import './bootstrap';
+import intlTelInput from 'intl-tel-input';
+import 'intl-tel-input/build/css/intlTelInput.css';
 
 document.addEventListener('DOMContentLoaded', () => {
+    const phoneInputs = document.querySelectorAll('[data-intl-phone]');
+    phoneInputs.forEach((input) => {
+        if (!(input instanceof HTMLInputElement)) {
+            return;
+        }
+
+        const iti = intlTelInput(input, {
+            initialCountry: 'ng',
+            countrySearch: true,
+            strictMode: true,
+            loadUtils: () => import('intl-tel-input/utils'),
+        });
+
+        const form = input.closest('form');
+        const phoneError = form?.querySelector('[data-phone-live-error]');
+        const submitButton = form?.querySelector('button[type="submit"]');
+        let debounceTimer = 0;
+        let activeController = null;
+
+        const setLiveError = (message) => {
+            if (!(phoneError instanceof HTMLElement)) {
+                return;
+            }
+            if (message) {
+                phoneError.textContent = message;
+                phoneError.classList.remove('hidden');
+                input.setCustomValidity(message);
+                if (submitButton instanceof HTMLButtonElement) {
+                    submitButton.disabled = true;
+                }
+                return;
+            }
+
+            phoneError.textContent = '';
+            phoneError.classList.add('hidden');
+            input.setCustomValidity('');
+            if (submitButton instanceof HTMLButtonElement) {
+                submitButton.disabled = false;
+            }
+        };
+
+        const checkPhoneAvailability = async () => {
+            if (!iti.isValidNumber()) {
+                setLiveError('');
+                return;
+            }
+
+            const e164Phone = iti.getNumber();
+            if (!e164Phone) {
+                setLiveError('');
+                return;
+            }
+
+            if (activeController instanceof AbortController) {
+                activeController.abort();
+            }
+
+            const controller = new AbortController();
+            activeController = controller;
+
+            try {
+                const response = await fetch(
+                    `/rsvp/phone-availability?phone=${encodeURIComponent(e164Phone)}`,
+                    {
+                        method: 'GET',
+                        headers: {
+                            Accept: 'application/json',
+                        },
+                        signal: controller.signal,
+                    }
+                );
+
+                if (!response.ok) {
+                    setLiveError('');
+                    return;
+                }
+
+                const payload = await response.json();
+                setLiveError(payload.available ? '' : 'This phone number has already RSVP’d.');
+            } catch (error) {
+                if (error?.name === 'AbortError') {
+                    return;
+                }
+                setLiveError('');
+            }
+        };
+
+        const scheduleAvailabilityCheck = () => {
+            window.clearTimeout(debounceTimer);
+            debounceTimer = window.setTimeout(checkPhoneAvailability, 300);
+        };
+
+        input.addEventListener('input', scheduleAvailabilityCheck);
+        input.addEventListener('countrychange', scheduleAvailabilityCheck);
+        input.addEventListener('blur', () => {
+            window.clearTimeout(debounceTimer);
+            void checkPhoneAvailability();
+        });
+
+        if (form instanceof HTMLFormElement) {
+            form.addEventListener('submit', (event) => {
+                if (iti.isValidNumber()) {
+                    input.value = iti.getNumber();
+                }
+
+                if (!input.checkValidity()) {
+                    event.preventDefault();
+                    input.reportValidity();
+                }
+            });
+        }
+    });
+
     /** Wire-style loading: disable submit + spinner on forms using .btn-wired */
     document.addEventListener(
         'submit',

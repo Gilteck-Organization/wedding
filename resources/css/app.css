@@ -35,6 +35,27 @@
         accent-color: var(--color-wedding-onion);
     }
 
+    .iti {
+        width: 100%;
+    }
+
+    .iti .iti__selected-country {
+        border-right: 1px solid color-mix(in srgb, var(--color-wedding-primary) 20%, transparent);
+        padding-inline: 0.75rem;
+    }
+
+    .iti input[data-intl-phone] {
+        padding-block: 0.75rem;
+        padding-inline: 4.6rem 1rem;
+    }
+
+    .iti__country-list {
+        border: 1px solid color-mix(in srgb, var(--color-wedding-primary) 25%, transparent);
+        background: var(--color-wedding-ivory);
+        color: var(--color-wedding-ink);
+        box-shadow: 0 12px 28px rgba(44, 36, 24, 0.14);
+    }
+
     .reveal {
         opacity: 0;
         transform: translateY(16px);
