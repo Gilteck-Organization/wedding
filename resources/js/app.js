@@ -1,8 +1,77 @@
 import './bootstrap';
+import { toPng } from 'html-to-image';
 import intlTelInput from 'intl-tel-input';
 import 'intl-tel-input/build/css/intlTelInput.css';
 
 document.addEventListener('DOMContentLoaded', () => {
+    const shareButton = document.querySelector('[data-share-access-card]');
+    if (shareButton instanceof HTMLButtonElement) {
+        const feedback = document.querySelector('[data-share-access-card-feedback]');
+        const shareTarget = document.querySelector('[data-share-access-card-target]');
+        const shareTitle = shareButton.dataset.shareTitle || 'Access Card';
+        const shareFilename = shareButton.dataset.shareFilename || 'access-card.png';
+
+        const setFeedback = (message) => {
+            if (feedback instanceof HTMLElement) {
+                feedback.textContent = message;
+            }
+        };
+
+        const dataUrlToFile = async (dataUrl, filename) => {
+            const response = await fetch(dataUrl);
+            const blob = await response.blob();
+            return new File([blob], filename, { type: 'image/png' });
+        };
+
+        shareButton.addEventListener('click', async () => {
+            if (!(shareTarget instanceof HTMLElement)) {
+                setFeedback('Access card image not found.');
+                return;
+            }
+
+            try {
+                shareButton.disabled = true;
+                setFeedback('Preparing card image...');
+
+                const dataUrl = await toPng(shareTarget, {
+                    pixelRatio: 2,
+                    cacheBust: true,
+                    backgroundColor: '#fffdf8',
+                });
+
+                const file = await dataUrlToFile(dataUrl, shareFilename);
+                if (
+                    navigator.share &&
+                    navigator.canShare &&
+                    navigator.canShare({ files: [file] })
+                ) {
+                    await navigator.share({
+                        title: shareTitle,
+                        files: [file],
+                    });
+                    setFeedback('Access card shared.');
+                    return;
+                }
+
+                const downloadLink = document.createElement('a');
+                downloadLink.href = dataUrl;
+                downloadLink.download = shareFilename;
+                document.body.append(downloadLink);
+                downloadLink.click();
+                downloadLink.remove();
+                setFeedback('Sharing is not available here. Downloaded image instead.');
+            } catch (error) {
+                if (error instanceof Error && error.name === 'AbortError') {
+                    setFeedback('');
+                } else {
+                    setFeedback('Could not generate image. Please try again.');
+                }
+            } finally {
+                shareButton.disabled = false;
+            }
+        });
+    }
+
     const phoneInputs = document.querySelectorAll('[data-intl-phone]');
     phoneInputs.forEach((input) => {
         if (!(input instanceof HTMLInputElement)) {

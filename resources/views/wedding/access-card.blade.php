@@ -26,13 +26,13 @@
     @endphp
 
     {{-- items-start + modest top padding: less empty space above the card on tall screens --}}
-    <div class="access-card-page flex min-h-svh items-start justify-center px-3 pt-6 pb-12 sm:px-6 sm:pt-8 sm:pb-16">
+    <div class="access-card-page flex flex-col min-h-svh items-start justify-center px-3 pt-6 pb-12 sm:px-6 sm:pt-8 sm:pb-16">
         {{--
             Card art: public/images/access card-temp.jpg
             Position QR + text in resources/css/app.css → .access-card-stage { --access-* }
         --}}
-        <div class="access-card-stage">
-            <img src="{{ asset('images/access card-temp.jpg') }}" alt="" class="access-card-stage__art"
+        <div class="access-card-stage" data-share-access-card-target>
+            <img src="/images/access card-temp.jpg" alt="" class="access-card-stage__art"
                 width="4419" height="6250" loading="eager" decoding="async">
 
             @if ($guest->is_approved && $guest->qr_code)
@@ -69,5 +69,18 @@
                 </div>
             @endif
         </div>
+
+        @if ($guest->is_approved && $guest->qr_code)
+            <div class="mt-5 flex flex-col items-center gap-2">
+                <button type="button"
+                    class="btn-wired px-6 py-2.5 text-xs sm:text-sm"
+                    data-share-access-card
+                    data-share-title="Fifi &amp; Kiki Access Card"
+                    data-share-filename="fifikiki-access-card-{{ $guest->id }}.png">
+                    <span class="btn-wired__text">Share access card</span>
+                </button>
+                <p class="text-xs text-wedding-muted" data-share-access-card-feedback aria-live="polite"></p>
+            </div>
+        @endif
     </div>
 @endsection
