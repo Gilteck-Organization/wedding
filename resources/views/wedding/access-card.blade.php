@@ -77,7 +77,7 @@
                 <button type="button"
                     class="btn-wired px-6 py-2.5 text-xs sm:text-sm"
                     data-share-access-card
-                    data-share-title="Fifi &amp; Kiki Access Card"
+                    data-share-title="Fifi &amp; Kiki Invitation"
                     data-share-filename="{{ $pdfFileName }}">
                     <span class="btn-wired__text">Share access card</span>
                 </button>
