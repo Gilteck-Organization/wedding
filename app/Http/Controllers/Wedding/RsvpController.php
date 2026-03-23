@@ -25,22 +25,17 @@ class RsvpController extends Controller
                 ]);
         }
 
-        if ($validated['attendance'] === 'yes') {
-            $requestedSeats = (int) $validated['guest_count'];
-            if ($reserved + $requestedSeats > $capacity) {
-                return redirect()
-                    ->route('wedding.home')
-                    ->withFragment('rsvp')
-                    ->withInput()
-                    ->withErrors([
-                        'capacity' => 'Not enough seats left for your party size. Try “Just me” or contact the hosts.',
-                    ]);
-            }
+        if ($validated['attendance'] === 'yes' && $reserved + 1 > $capacity) {
+            return redirect()
+                ->route('wedding.home')
+                ->withFragment('rsvp')
+                ->withInput()
+                ->withErrors([
+                    'capacity' => 'Not enough seats left. Our guest list is full.',
+                ]);
         }
 
-        $guestCount = $validated['attendance'] === 'yes'
-            ? (int) $validated['guest_count']
-            : null;
+        $guestCount = $validated['attendance'] === 'yes' ? 1 : null;
 
         $rsvp = Rsvp::create([
             'guest_id' => null,

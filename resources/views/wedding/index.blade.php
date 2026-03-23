@@ -175,36 +175,6 @@
                                         @enderror
                                     </div>
 
-                                    {{-- @php
-                                        $partySize = (string) (old('guest_count') ?? '1');
-                                    @endphp
-                                    <fieldset>
-                                        <legend class="block text-sm font-medium normal-case text-wedding-muted">
-                                            Guest
-                                        </legend>
-                                        <div class="mt-3 space-y-2 flex md:flex-row flex-col gap-2 w-full">
-                                            <label
-                                                class="flex cursor-pointer w-full items-start gap-3 border border-wedding-primary/25 bg-white px-4 py-3 text-sm text-wedding-ink transition has-[:checked]:border-wedding-onion has-[:checked]:ring-1 has-[:checked]:ring-wedding-onion/35">
-                                                <input type="radio" name="guest_count" value="1" required
-                                                    @checked($partySize === '1')
-                                                    class="mt-1 size-4 shrink-0 border-wedding-primary/40 accent-wedding-onion focus:outline-none focus:ring-2 focus:ring-wedding-onion/35 focus:ring-offset-0">
-                                                <span class="normal-case leading-snug">Just me</span>
-                                            </label>
-                                            <label
-                                                class="flex cursor-pointer w-full items-start gap-3 border border-wedding-primary/25 bg-white px-4 py-3 text-sm text-wedding-ink transition has-[:checked]:border-wedding-onion has-[:checked]:ring-1 has-[:checked]:ring-wedding-onion/35">
-                                                <input type="radio" name="guest_count" value="2"
-                                                    @checked($partySize === '2')
-                                                    class="mt-1 size-4 shrink-0 border-wedding-primary/40 accent-wedding-onion focus:outline-none focus:ring-2 focus:ring-wedding-onion/35 focus:ring-offset-0">
-                                                <span class="normal-case leading-snug">Me and one guest
-                                                </span>
-                                            </label>
-                                        </div>
-                                        @error('guest_count')
-                                            <p class="mt-2 text-sm text-red-700">{{ $message }}</p>
-                                        @enderror
-                                    </fieldset> --}}
-
-
                                     <button type="submit" class="btn-wired w-full px-7 py-3.5 text-sm">
                                         <span class="btn-wired__text">Submit RSVP</span>
                                     </button>
