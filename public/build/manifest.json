@@ -4,7 +4,7 @@
     "name": "chunk"
   },
   "node_modules/canvg/lib/index.es.js": {
-    "file": "assets/index.es-BcaTn5zN.js",
+    "file": "assets/index.es-ZFj4XOj2.js",
     "name": "index.es",
     "src": "node_modules/canvg/lib/index.es.js",
     "isDynamicEntry": true,
@@ -43,7 +43,7 @@
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-D6rQbxQl.js",
+    "file": "assets/app-tTyVzIji.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,

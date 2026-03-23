@@ -61,6 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const rect = target.getBoundingClientRect();
             const width = Math.max(1, Math.round(rect.width));
             const height = Math.max(1, Math.round(rect.height));
+            const captureScale = Math.min(4, Math.max(2.5, window.devicePixelRatio || 2));
 
             let attempt = 0;
             let lastError = null;
@@ -69,19 +70,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     const canvas = await html2canvas(target, {
                         useCORS: true,
                         backgroundColor: '#fffdf8',
-                        scale: 2,
+                        scale: captureScale,
                         width,
                         height,
+                        logging: false,
                     });
 
-                    const imageData = canvas.toDataURL('image/jpeg', 0.98);
+                    const imageData = canvas.toDataURL('image/png');
                     const orientation = canvas.width >= canvas.height ? 'landscape' : 'portrait';
                     const pdf = new jsPDF({
                         orientation,
                         unit: 'px',
                         format: [canvas.width, canvas.height],
                     });
-                    pdf.addImage(imageData, 'JPEG', 0, 0, canvas.width, canvas.height, undefined, 'FAST');
+                    pdf.addImage(imageData, 'PNG', 0, 0, canvas.width, canvas.height, undefined, 'NONE');
                     const pdfBlob = pdf.output('blob');
                     return pdfBlob;
                 } catch (error) {
@@ -102,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 shareButton.disabled = true;
-                setFeedback('Preparing invitation PDF...');
+                setFeedback('Preparing invitation...');
 
                 await waitForShareAssets(shareTarget);
                 const pdfBlob = await captureCardPdf(shareTarget);
