@@ -73,6 +73,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         pixelRatio: 2,
                         canvasWidth: width * 2,
                         canvasHeight: height * 2,
+                        fontEmbedCSS: '',
+                        skipFonts: true,
                     });
                 } catch (error) {
                     lastError = error;

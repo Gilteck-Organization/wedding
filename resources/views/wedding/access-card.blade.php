@@ -32,7 +32,7 @@
             Position QR + text in resources/css/app.css → .access-card-stage { --access-* }
         --}}
         <div class="access-card-stage" data-share-access-card-target>
-            <img src="/images/access card-temp.jpg" alt="" class="access-card-stage__art"
+            <img src="/images/access%20card-temp.jpg" alt="" class="access-card-stage__art"
                 width="4419" height="6250" loading="eager" decoding="async">
 
             @if ($guest->is_approved && $guest->qr_code)
