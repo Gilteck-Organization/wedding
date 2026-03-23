@@ -16,6 +16,8 @@
     },
     "dependencies": {
         "html-to-image": "^1.11.13",
-        "intl-tel-input": "^26.8.1"
+        "html2canvas": "^1.4.1",
+        "intl-tel-input": "^26.8.1",
+        "jspdf": "^4.2.1"
     }
 }

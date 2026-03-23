@@ -23,6 +23,8 @@
         $additionalGuests = $partySize !== null && $partySize > 1 ? $partySize - 1 : null;
 
         $qrRgb = config('wedding.access_card_qr_rgb');
+        $pdfBaseName = trim(preg_replace('/[^A-Za-z0-9 _-]/', '', $guest->name) ?? '');
+        $pdfFileName = ($pdfBaseName !== '' ? $pdfBaseName : 'guest').' invitation.pdf';
     @endphp
 
     {{-- items-start + modest top padding: less empty space above the card on tall screens --}}
@@ -76,7 +78,7 @@
                     class="btn-wired px-6 py-2.5 text-xs sm:text-sm"
                     data-share-access-card
                     data-share-title="Fifi &amp; Kiki Access Card"
-                    data-share-filename="fifikiki-access-card-{{ $guest->id }}.png">
+                    data-share-filename="{{ $pdfFileName }}">
                     <span class="btn-wired__text">Share access card</span>
                 </button>
                 <p class="text-xs text-wedding-muted" data-share-access-card-feedback aria-live="polite"></p>

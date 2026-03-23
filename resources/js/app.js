@@ -1,6 +1,7 @@
 import './bootstrap';
-import { toPng } from 'html-to-image';
+import html2canvas from 'html2canvas';
 import intlTelInput from 'intl-tel-input';
+import { jsPDF } from 'jspdf';
 import 'intl-tel-input/build/css/intlTelInput.css';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -17,10 +18,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
-        const dataUrlToFile = async (dataUrl, filename) => {
-            const response = await fetch(dataUrl);
-            const blob = await response.blob();
-            return new File([blob], filename, { type: 'image/png' });
+        const blobToFile = (blob, filename) => {
+            return new File([blob], filename, { type: 'application/pdf' });
         };
 
         const waitForShareAssets = async (target) => {
@@ -58,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
-        const captureCardPng = async (target) => {
+        const captureCardPdf = async (target) => {
             const rect = target.getBoundingClientRect();
             const width = Math.max(1, Math.round(rect.width));
             const height = Math.max(1, Math.round(rect.height));
@@ -67,15 +66,24 @@ document.addEventListener('DOMContentLoaded', () => {
             let lastError = null;
             while (attempt < 3) {
                 try {
-                    return await toPng(target, {
-                        cacheBust: true,
+                    const canvas = await html2canvas(target, {
+                        useCORS: true,
                         backgroundColor: '#fffdf8',
-                        pixelRatio: 2,
-                        canvasWidth: width * 2,
-                        canvasHeight: height * 2,
-                        fontEmbedCSS: '',
-                        skipFonts: true,
+                        scale: 2,
+                        width,
+                        height,
                     });
+
+                    const imageData = canvas.toDataURL('image/jpeg', 0.98);
+                    const orientation = canvas.width >= canvas.height ? 'landscape' : 'portrait';
+                    const pdf = new jsPDF({
+                        orientation,
+                        unit: 'px',
+                        format: [canvas.width, canvas.height],
+                    });
+                    pdf.addImage(imageData, 'JPEG', 0, 0, canvas.width, canvas.height, undefined, 'FAST');
+                    const pdfBlob = pdf.output('blob');
+                    return pdfBlob;
                 } catch (error) {
                     lastError = error;
                     attempt += 1;
@@ -94,12 +102,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 shareButton.disabled = true;
-                setFeedback('Preparing card image...');
+                setFeedback('Preparing invitation PDF...');
 
                 await waitForShareAssets(shareTarget);
-                const dataUrl = await captureCardPng(shareTarget);
+                const pdfBlob = await captureCardPdf(shareTarget);
 
-                const file = await dataUrlToFile(dataUrl, shareFilename);
+                const file = blobToFile(pdfBlob, shareFilename);
                 if (
                     navigator.share &&
                     navigator.canShare &&
@@ -109,22 +117,24 @@ document.addEventListener('DOMContentLoaded', () => {
                         title: shareTitle,
                         files: [file],
                     });
-                    setFeedback('Access card shared.');
+                    setFeedback('Invitation PDF shared.');
                     return;
                 }
 
+                const pdfUrl = URL.createObjectURL(pdfBlob);
                 const downloadLink = document.createElement('a');
-                downloadLink.href = dataUrl;
+                downloadLink.href = pdfUrl;
                 downloadLink.download = shareFilename;
                 document.body.append(downloadLink);
                 downloadLink.click();
                 downloadLink.remove();
-                setFeedback('Sharing is not available here. Downloaded image instead.');
+                window.setTimeout(() => URL.revokeObjectURL(pdfUrl), 1500);
+                setFeedback('Sharing is not available here. Downloaded PDF instead.');
             } catch (error) {
                 if (error instanceof Error && error.name === 'AbortError') {
                     setFeedback('');
                 } else {
-                    setFeedback('Could not generate image. Please try again.');
+                    setFeedback('Could not generate invitation PDF. Please try again.');
                 }
             } finally {
                 shareButton.disabled = false;
