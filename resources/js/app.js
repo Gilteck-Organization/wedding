@@ -23,6 +23,67 @@ document.addEventListener('DOMContentLoaded', () => {
             return new File([blob], filename, { type: 'image/png' });
         };
 
+        const waitForShareAssets = async (target) => {
+            const images = Array.from(target.querySelectorAll('img'));
+            await Promise.all(
+                images.map(async (image) => {
+                    if (!(image instanceof HTMLImageElement)) {
+                        return;
+                    }
+
+                    if (!image.complete || image.naturalWidth === 0) {
+                        await new Promise((resolve) => {
+                            const done = () => resolve();
+                            image.addEventListener('load', done, { once: true });
+                            image.addEventListener('error', done, { once: true });
+                        });
+                    }
+
+                    if (typeof image.decode === 'function') {
+                        try {
+                            await image.decode();
+                        } catch {
+                            // no-op
+                        }
+                    }
+                })
+            );
+
+            if (document.fonts?.ready) {
+                try {
+                    await document.fonts.ready;
+                } catch {
+                    // no-op
+                }
+            }
+        };
+
+        const captureCardPng = async (target) => {
+            const rect = target.getBoundingClientRect();
+            const width = Math.max(1, Math.round(rect.width));
+            const height = Math.max(1, Math.round(rect.height));
+
+            let attempt = 0;
+            let lastError = null;
+            while (attempt < 3) {
+                try {
+                    return await toPng(target, {
+                        cacheBust: true,
+                        backgroundColor: '#fffdf8',
+                        pixelRatio: 2,
+                        canvasWidth: width * 2,
+                        canvasHeight: height * 2,
+                    });
+                } catch (error) {
+                    lastError = error;
+                    attempt += 1;
+                    await new Promise((resolve) => window.setTimeout(resolve, 180));
+                }
+            }
+
+            throw lastError ?? new Error('Failed to capture access card image.');
+        };
+
         shareButton.addEventListener('click', async () => {
             if (!(shareTarget instanceof HTMLElement)) {
                 setFeedback('Access card image not found.');
@@ -33,11 +94,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 shareButton.disabled = true;
                 setFeedback('Preparing card image...');
 
-                const dataUrl = await toPng(shareTarget, {
-                    pixelRatio: 2,
-                    cacheBust: true,
-                    backgroundColor: '#fffdf8',
-                });
+                await waitForShareAssets(shareTarget);
+                const dataUrl = await captureCardPng(shareTarget);
 
                 const file = await dataUrlToFile(dataUrl, shareFilename);
                 if (
