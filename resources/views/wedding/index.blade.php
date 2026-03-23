@@ -3,16 +3,15 @@
 @section('hideFooter', '1')
 
 @section('content')
-    {{-- Wedding monogram preloader (F & K) --}}
+    {{-- Wedding preloader (logo) --}}
     <div id="wedding-preloader" class="wedding-preloader" aria-busy="true" aria-live="polite" role="status">
         <div class="wedding-preloader__frame">
-            <p class="wedding-preloader__eyebrow">Together with their families</p>
-            <div class="wedding-preloader__monogram" aria-hidden="true">
-                <span class="wedding-preloader__letter">F</span>
-                <span class="wedding-preloader__divider"></span>
-                <span class="wedding-preloader__letter">K</span>
-            </div>
-            <p class="wedding-preloader__names">Fifi &amp; Kiki</p>
+            <img src="{{ asset('images/fifikiki-logo.png') }}"
+                alt="Fifi &amp; Kiki"
+                class="wedding-preloader__logo"
+                loading="eager"
+                decoding="async"
+                fetchpriority="high">
         </div>
     </div>
 
@@ -22,24 +21,24 @@
             @php
                 $heroSlides = [
                     ['file' => 'slide-1.png', 'alt' => 'Wedding invitation'],
-                    ['file' => 'slide-2.jpeg', 'alt' => 'Wedding invitation'],
-                    ['file' => 'slide-3.jpeg', 'alt' => 'Wedding invitation'],
+                    ['file' => 'slide-2.png', 'alt' => 'Wedding invitation'],
+                    ['file' => 'slide-3.png', 'alt' => 'Wedding invitation'],
                 ];
                 $heroSlideCount = count($heroSlides);
             @endphp
             <div
                 class="premium-stage--fade-bottom relative flex min-h-[min(78svh,720px)] flex-col premium-stage px-0 pb-4 sm:pb-6 lg:min-h-svh lg:pb-8 xl:pb-10">
-                {{-- Monogram card: absolutely positioned over slideshow (does not reduce image area) --}}
+                {{-- Logo: absolutely positioned over slideshow (does not reduce image area) --}}
                 <header
                     class="wedding-hero-header pointer-events-none absolute left-0 right-0 top-0 z-[4]"
                     role="banner">
                     <div class="wedding-hero-header__frame pointer-events-auto">
-                        <div class="wedding-hero-header__monogram" aria-hidden="true">
-                            <span class="wedding-hero-header__letter">F</span>
-                            <span class="wedding-hero-header__divider"></span>
-                            <span class="wedding-hero-header__letter">K</span>
-                        </div>
-                        <p class="wedding-hero-header__names">Fifi &amp; Kiki</p>
+                        <img src="{{ asset('images/fifikiki-logo.png') }}"
+                            alt="Fifi &amp; Kiki"
+                            class="wedding-hero-header__logo"
+                            loading="eager"
+                            decoding="async"
+                            fetchpriority="high">
                     </div>
                 </header>
 
@@ -97,7 +96,7 @@
                             RSVP
                         </h2>
                         <p class="mt-2 text-center text-sm text-wedding-muted">
-                            Kindly respond below. Strictly by invitation.
+                            Kindly respond below. Strictly by invitation. This card admits only one person
                         </p>
 
                         @if (session('rsvp_success'))

@@ -55,7 +55,7 @@
         }
     }
 
-    /* Home: monogram preloader */
+    /* Home: logo preloader */
     .wedding-preloader {
         position: fixed;
         inset: 0;
@@ -91,53 +91,14 @@
         animation: preloader-frame-in 1s ease-out both;
     }
 
-    .wedding-preloader__eyebrow {
-        font-size: 0.65rem;
-        letter-spacing: 0.35em;
-        text-transform: uppercase;
-        color: var(--color-wedding-muted);
-        margin-bottom: 1.25rem;
-    }
-
-    .wedding-preloader__monogram {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: clamp(0.75rem, 4vw, 1.5rem);
-    }
-
-    .wedding-preloader__letter {
-        font-family: var(--font-serif);
-        font-size: clamp(3.25rem, 14vw, 5rem);
-        font-weight: 600;
-        line-height: 1;
-        color: var(--color-wedding-primary);
-        text-shadow: 0 2px 0 rgba(255, 253, 248, 0.8);
-        animation: preloader-letter-in 0.9s ease-out both;
-    }
-
-    .wedding-preloader__letter:nth-child(3) {
-        animation-delay: 0.12s;
-    }
-
-    .wedding-preloader__divider {
-        width: 1px;
-        height: clamp(3rem, 12vw, 4.5rem);
-        background: linear-gradient(
-            180deg,
-            transparent,
-            color-mix(in srgb, var(--color-wedding-primary) 45%, transparent),
-            transparent
-        );
-        animation: preloader-divider-in 0.8s ease-out 0.2s both;
-    }
-
-    .wedding-preloader__names {
-        margin-top: 1.25rem;
-        font-family: var(--font-script);
-        font-size: clamp(1.5rem, 5vw, 2rem);
-        color: var(--color-wedding-accent);
-        animation: preloader-sub-in 0.8s ease-out 0.35s both;
+    .wedding-preloader__logo {
+        display: block;
+        height: auto;
+        width: auto;
+        max-width: min(100%, 22rem);
+        max-height: clamp(4rem, 22vw, 8rem);
+        margin-inline: auto;
+        animation: preloader-sub-in 0.85s ease-out 0.2s both;
     }
 
     @keyframes preloader-frame-in {
@@ -148,28 +109,6 @@
         to {
             opacity: 1;
             transform: scale(1) translateY(0);
-        }
-    }
-
-    @keyframes preloader-letter-in {
-        from {
-            opacity: 0;
-            transform: translateY(18px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    @keyframes preloader-divider-in {
-        from {
-            opacity: 0;
-            transform: scaleY(0.3);
-        }
-        to {
-            opacity: 1;
-            transform: scaleY(1);
         }
     }
 
@@ -184,9 +123,7 @@
 
     @media (prefers-reduced-motion: reduce) {
         .wedding-preloader__frame,
-        .wedding-preloader__letter,
-        .wedding-preloader__divider,
-        .wedding-preloader__names {
+        .wedding-preloader__logo {
             animation: none;
         }
     }
@@ -440,7 +377,7 @@
         touch-action: pan-y;
     }
 
-    /* Home — compact monogram strip; sits above mobile gradient wash */
+    /* Home — logo chip over hero; sits above mobile gradient wash */
     .wedding-hero-header {
         display: flex;
         justify-content: center;
@@ -450,60 +387,28 @@
 
     .wedding-hero-header__frame {
         width: fit-content;
-        max-width: 100%;
-        text-align: center;
-        padding: 0.35rem 0.55rem 0.4rem;
+        max-width: min(100%, 16rem);
+        padding: 0.3rem 0.65rem;
         border: 1px solid color-mix(in srgb, var(--color-wedding-primary) 32%, transparent);
         background: rgba(255, 253, 248, 0.92);
         box-shadow: 0 4px 14px rgba(44, 36, 24, 0.08);
     }
 
-    .wedding-hero-header__monogram {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.35rem;
-    }
-
-    .wedding-hero-header__letter {
-        font-family: var(--font-serif);
-        font-size: clamp(1.25rem, 5vw, 1.65rem);
-        font-weight: 600;
-        line-height: 1;
-        color: var(--color-wedding-primary);
-        text-shadow: 0 1px 0 rgba(255, 253, 248, 0.85);
-    }
-
-    .wedding-hero-header__divider {
-        width: 1px;
-        height: 1.35rem;
-        background: linear-gradient(
-            180deg,
-            transparent,
-            color-mix(in srgb, var(--color-wedding-primary) 45%, transparent),
-            transparent
-        );
-    }
-
-    .wedding-hero-header__names {
-        margin-top: 0.2rem;
-        font-family: var(--font-script);
-        font-size: clamp(0.85rem, 3.2vw, 1.05rem);
-        line-height: 1.15;
-        color: var(--color-wedding-accent);
+    .wedding-hero-header__logo {
+        display: block;
+        height: auto;
+        width: auto;
+        max-width: 100%;
+        max-height: clamp(2rem, 6.5vw, 3rem);
     }
 
     @media (min-width: 1024px) {
-        .wedding-hero-header__letter {
-            font-size: 1.5rem;
+        .wedding-hero-header__frame {
+            max-width: min(100%, 18rem);
         }
 
-        .wedding-hero-header__names {
-            font-size: 1rem;
-        }
-
-        .wedding-hero-header__divider {
-            height: 1.5rem;
+        .wedding-hero-header__logo {
+            max-height: 3.25rem;
         }
     }
 

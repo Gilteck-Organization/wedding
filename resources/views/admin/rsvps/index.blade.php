@@ -22,7 +22,8 @@
             </div>
         </div>
 
-        <div class="mt-6 bg-white/70 backdrop-blur rounded-none border border-[#946112]/20 shadow overflow-hidden reveal" data-reveal>
+        {{-- No overflow-hidden / backdrop-blur / reveal on this card: they trap position:fixed dropdowns --}}
+        <div class="mt-6 rounded-none border border-[#946112]/20 bg-[#fffdf8]/95 shadow">
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
                     <thead>
@@ -179,10 +180,10 @@
                 panel.style.removeProperty('z-index');
             }
 
-            document.querySelectorAll('.admin-rsvp-menu details').forEach(function(detailsEl) {
+            document.querySelectorAll('details.admin-rsvp-menu').forEach(function(detailsEl) {
                 detailsEl.addEventListener('toggle', function() {
                     if (detailsEl.open) {
-                        document.querySelectorAll('.admin-rsvp-menu details[open]').forEach(function(other) {
+                        document.querySelectorAll('details.admin-rsvp-menu[open]').forEach(function(other) {
                             if (other !== detailsEl) {
                                 other.removeAttribute('open');
                             }
@@ -195,7 +196,7 @@
             });
 
             document.addEventListener('click', function(e) {
-                document.querySelectorAll('.admin-rsvp-menu details[open]').forEach(function(d) {
+                document.querySelectorAll('details.admin-rsvp-menu[open]').forEach(function(d) {
                     if (!d.contains(e.target)) {
                         d.removeAttribute('open');
                     }
@@ -203,7 +204,7 @@
             });
 
             document.addEventListener('scroll', function() {
-                document.querySelectorAll('.admin-rsvp-menu details[open]').forEach(function(d) {
+                document.querySelectorAll('details.admin-rsvp-menu[open]').forEach(function(d) {
                     d.removeAttribute('open');
                 });
             }, true);

@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (track instanceof HTMLElement && total > 1) {
             let index = 0;
             let timerId = 0;
-            const intervalMs = 6500;
+            const intervalMs = 3000;
             const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
             const stepPct = 100 / total;
             const swipeThresholdPx = 48;
