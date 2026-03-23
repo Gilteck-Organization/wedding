@@ -81,14 +81,12 @@
                 <div class="w-full max-w-2xl mx-auto reveal" data-reveal>
                     <div class="text-center">
                         <div class="gold-divider mt-2"></div>
-
-                        <p class="mt-7 font-serif text-base sm:text-base font-semibold text-wedding-onion">
-                            Wedding Ceremony
-                        </p>
-
                         <h1 class="mt-4 font-script text-4xl sm:text-5xl text-wedding-champagne leading-none">
                             Fifi &amp; Kiki
                         </h1>
+                        <p class="mt-7 font-serif text-base sm:text-base font-semibold text-wedding-onion">
+                            Wedding
+                        </p>
                     </div>
 
                     <section id="rsvp" class="mt-10 scroll-mt-8">
