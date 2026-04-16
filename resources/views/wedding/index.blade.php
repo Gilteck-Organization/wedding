@@ -17,8 +17,9 @@
             @php
                 $heroSlides = [
                     ['file' => 'slide-1.png', 'alt' => 'Wedding invitation'],
-                    ['file' => 'slide-2.png', 'alt' => 'Wedding invitation'],
-                    ['file' => 'slide-3.png', 'alt' => 'Wedding invitation'],
+                    // ['file' => 'slide-2.png', 'alt' => 'Wedding invitation'],
+                    // ['file' => 'slide-3.png', 'alt' => 'Wedding invitation'],
+                    ['file' => 'slide-4.png', 'alt' => 'Wedding invitation'],
                 ];
                 $heroSlideCount = count($heroSlides);
             @endphp
