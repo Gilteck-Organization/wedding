@@ -86,8 +86,11 @@
                             <div
                                 class="mt-6 border border-wedding-primary/30 bg-wedding-ivory/95 px-6 py-10 text-center shadow-sm sm:px-10">
                                 <p class="text-sm leading-relaxed text-wedding-muted sm:text-base">
-                                    Thank you for your response. We have received your RSVP. You will receive your
-                                    access card shortly before the event. Looking forward to celebrating with you.
+                                    Thank you for your response. We have received your RSVP. You will receive your access
+                                    card and details of the church and reception venues nearer the date of the event.
+                                    We Look forward to celebrating with you.
+                                    <br>
+                                    Fifi & Kiki
                                 </p>
                                 {{-- <a href="{{ route('wedding.home') }}?rsvp=form#rsvp"
                                     class="btn-wired mt-7 inline-flex px-8 py-3 text-sm">
