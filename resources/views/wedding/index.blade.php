@@ -185,7 +185,17 @@
                         @endif
                     </section>
 
-
+                    <div class="mt-10 flex items-center justify-center gap-4 text-center">
+                        <a href="{{ route('wedding.privacy') }}"
+                            class="text-[11px] uppercase tracking-[0.2em] text-wedding-muted/80 underline-offset-4 hover:text-wedding-primary hover:underline">
+                            Privacy Policy
+                        </a>
+                        <span aria-hidden="true" class="text-wedding-muted/40">&middot;</span>
+                        <a href="{{ route('wedding.terms') }}"
+                            class="text-[11px] uppercase tracking-[0.2em] text-wedding-muted/80 underline-offset-4 hover:text-wedding-primary hover:underline">
+                            Terms &amp; Conditions
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>

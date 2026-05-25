@@ -12,6 +12,8 @@ use App\Http\Controllers\WeddingController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [WeddingController::class, 'index'])->name('wedding.home');
+Route::view('/privacy', 'wedding.privacy')->name('wedding.privacy');
+Route::view('/terms', 'wedding.terms')->name('wedding.terms');
 
 Route::redirect('/rsvp', '/#rsvp', 302)->name('rsvp.form');
 Route::post('/rsvp', [RsvpController::class, 'store'])->name('rsvp.submit');
