@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminProfileController;
 use App\Http\Controllers\Admin\RsvpAdminController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Webhook\WhatsappWebhookController;
 use App\Http\Controllers\Wedding\RsvpController;
 use App\Http\Controllers\WeddingController;
 use Illuminate\Support\Facades\Route;
@@ -18,6 +19,9 @@ Route::get('/rsvp/phone-availability', [RsvpController::class, 'phoneAvailabilit
     ->middleware('throttle:60,1')
     ->name('rsvp.phone-availability');
 Route::redirect('/rsvp/confirmation', '/#rsvp', 302)->name('rsvp.confirmation');
+
+Route::get('/webhook/whatsapp', [WhatsappWebhookController::class, 'verify'])->name('webhook.whatsapp.verify');
+Route::post('/webhook/whatsapp', [WhatsappWebhookController::class, 'handle'])->name('webhook.whatsapp.handle');
 
 Route::get('/access-card/{guest}', [AccessCardController::class, 'show'])
     ->where('guest', '[a-z]{5}')
