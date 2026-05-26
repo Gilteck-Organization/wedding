@@ -23,14 +23,23 @@ class Guest extends Model
         'access_token',
         'qr_code',
         'is_approved',
+        'whatsapp_message_id',
+        'whatsapp_status',
+        'whatsapp_status_at',
+        'whatsapp_last_sent_at',
+        'whatsapp_attempts',
+        'whatsapp_error',
     ];
 
-    /**
-     * @var array<string, string>
-     */
-    protected $casts = [
-        'is_approved' => 'boolean',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'is_approved' => 'boolean',
+            'whatsapp_status_at' => 'datetime',
+            'whatsapp_last_sent_at' => 'datetime',
+            'whatsapp_attempts' => 'integer',
+        ];
+    }
 
     /**
      * @var array<int, string>

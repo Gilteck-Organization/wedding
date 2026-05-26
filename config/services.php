@@ -44,6 +44,8 @@ return [
         'template_name' => env('WHATSAPP_TEMPLATE_NAME'),
         'template_language' => env('WHATSAPP_TEMPLATE_LANGUAGE', 'en'),
         'graph_version' => env('WHATSAPP_GRAPH_VERSION', 'v21.0'),
+        'header_image_url' => env('WHATSAPP_HEADER_IMAGE_URL'),
+        'button_url_param_enabled' => env('WHATSAPP_BUTTON_URL_PARAM_ENABLED', true),
     ],
 
 ];

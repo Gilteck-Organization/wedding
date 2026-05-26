@@ -34,6 +34,7 @@
                             <th class="text-left px-4 py-3 font-semibold text-[#2c2418]/80">Guest Count</th>
                             <th class="text-left px-4 py-3 font-semibold text-[#2c2418]/80">Date</th>
                             <th class="text-left px-4 py-3 font-semibold text-[#2c2418]/80">Status</th>
+                            <th class="text-left px-4 py-3 font-semibold text-[#2c2418]/80">WhatsApp</th>
                             <th class="text-left px-4 py-3 font-semibold text-[#2c2418]/80">Actions</th>
                         </tr>
                     </thead>
@@ -61,6 +62,24 @@
                                         </span>
                                     @endif
                                 </td>
+                                <td class="px-4 py-3">
+                                    @php
+                                        $waStatus = $rsvp->guest?->whatsapp_status;
+                                        $waError = $rsvp->guest?->whatsapp_error;
+                                        $waPill = match ($waStatus) {
+                                            'sent' => ['Sent', 'bg-white/60 text-[#2c2418]/70 border-[#946112]/30'],
+                                            'delivered' => ['Delivered', 'bg-[#946112]/12 text-[#946112] border-[#946112]/40'],
+                                            'read' => ['Read', 'bg-[#946112]/20 text-[#946112] border-[#946112]/50'],
+                                            'retrying' => ['Retrying', 'bg-[#803b48]/10 text-[#803b48] border-[#803b48]/30'],
+                                            'failed' => ['Failed', 'bg-[#803b48]/15 text-[#803b48] border-[#803b48]/40'],
+                                            default => ['—', 'bg-white/50 text-[#2c2418]/40 border-[#946112]/15'],
+                                        };
+                                    @endphp
+                                    <span class="inline-flex items-center rounded-none border px-3 py-1 text-[11px] font-semibold {{ $waPill[1] }}"
+                                        @if ($waError) title="{{ $waError }}" @endif>
+                                        {{ $waPill[0] }}
+                                    </span>
+                                </td>
                                 <td class="px-4 py-3 align-middle">
                                     <div class="flex justify-end">
                                         <details class="admin-rsvp-menu group relative z-20">
@@ -83,6 +102,15 @@
                                                         class="block px-4 py-2.5 text-xs font-semibold text-[#2c2418] transition-colors hover:bg-[#946112]/10">
                                                         Access card
                                                     </a>
+                                                    <form action="{{ route('admin.rsvps.resend-whatsapp', $rsvp) }}"
+                                                        method="POST" class="m-0"
+                                                        onsubmit="return confirm({{ \Illuminate\Support\Js::from('Resend the WhatsApp access card to '.$rsvp->name.'?') }})">
+                                                        @csrf
+                                                        <button type="submit" role="menuitem"
+                                                            class="w-full px-4 py-2.5 text-left text-xs font-semibold text-[#2c2418] transition-colors hover:bg-[#946112]/10">
+                                                            Resend WhatsApp
+                                                        </button>
+                                                    </form>
                                                 @else
                                                     <form action="{{ route('admin.rsvps.approve', $rsvp) }}" method="POST"
                                                         class="m-0">
@@ -121,7 +149,7 @@
                             </tr>
                         @empty
                             <tr class="border-t border-[#946112]/10">
-                                <td class="px-4 py-8 text-center text-[#2c2418]/70" colspan="7">
+                                <td class="px-4 py-8 text-center text-[#2c2418]/70" colspan="8">
                                     No RSVPs yet.
                                 </td>
                             </tr>

@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Webhook;
 
 use App\Http\Controllers\Controller;
+use App\Models\Guest;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 
 class WhatsappWebhookController extends Controller
@@ -51,11 +53,95 @@ class WhatsappWebhookController extends Controller
             return response('Invalid signature', 403);
         }
 
+        $payload = $request->all();
+
+        $this->processStatuses($payload);
+
         Log::info('WhatsApp webhook event received.', [
-            'payload' => $request->all(),
+            'payload' => $payload,
         ]);
 
         return response('', 200);
+    }
+
+    /**
+     * Update the guest record for each delivery / read / failure status
+     * Meta reports in the webhook payload.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    private function processStatuses(array $payload): void
+    {
+        $entries = $payload['entry'] ?? [];
+
+        if (! is_array($entries)) {
+            return;
+        }
+
+        foreach ($entries as $entry) {
+            $changes = $entry['changes'] ?? [];
+
+            if (! is_array($changes)) {
+                continue;
+            }
+
+            foreach ($changes as $change) {
+                $statuses = $change['value']['statuses'] ?? [];
+
+                if (! is_array($statuses)) {
+                    continue;
+                }
+
+                foreach ($statuses as $status) {
+                    $this->applyStatus($status);
+                }
+            }
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $status
+     */
+    private function applyStatus(array $status): void
+    {
+        $wamid = $status['id'] ?? null;
+        $state = $status['status'] ?? null;
+        $timestamp = $status['timestamp'] ?? null;
+
+        if (! is_string($wamid) || ! is_string($state)) {
+            return;
+        }
+
+        $guest = Guest::query()->where('whatsapp_message_id', $wamid)->first();
+
+        if ($guest === null) {
+            return;
+        }
+
+        $statusAt = is_numeric($timestamp)
+            ? Carbon::createFromTimestamp((int) $timestamp)
+            : Carbon::now();
+
+        if ($guest->whatsapp_status_at !== null && $guest->whatsapp_status_at->greaterThan($statusAt)) {
+            return;
+        }
+
+        $update = [
+            'whatsapp_status' => $state,
+            'whatsapp_status_at' => $statusAt,
+        ];
+
+        if ($state === 'failed') {
+            $errors = $status['errors'] ?? [];
+            $first = is_array($errors) && isset($errors[0]) ? $errors[0] : null;
+            $message = is_array($first)
+                ? ($first['error_data']['details'] ?? $first['title'] ?? $first['message'] ?? 'Unknown error')
+                : 'Unknown error';
+
+            $update['whatsapp_error'] = mb_substr((string) $message, 0, 1000);
+        }
+
+        $guest->forceFill($update)->save();
     }
 
     /**

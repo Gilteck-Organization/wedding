@@ -50,6 +50,7 @@ Route::middleware('auth')->prefix('admin')->group(function (): void {
     Route::get('/rsvps', [RsvpAdminController::class, 'index'])->name('admin.rsvps.index');
     Route::post('/rsvps/{rsvp}/approve', [RsvpAdminController::class, 'approve'])->name('admin.rsvps.approve');
     Route::post('/rsvps/{rsvp}/revoke-attendance', [RsvpAdminController::class, 'revokeAttendance'])->name('admin.rsvps.revoke-attendance');
+    Route::post('/rsvps/{rsvp}/resend-whatsapp', [RsvpAdminController::class, 'resendWhatsapp'])->name('admin.rsvps.resend-whatsapp');
     Route::get('/rsvps/export.csv', [RsvpAdminController::class, 'exportCsv'])->name('admin.rsvps.export.csv');
 
     Route::get('/access-names', [AccessNameController::class, 'index'])->name('admin.access-names.index');

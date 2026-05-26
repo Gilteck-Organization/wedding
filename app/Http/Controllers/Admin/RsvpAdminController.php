@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SendAccessCardWhatsappJob;
 use App\Models\Guest;
 use App\Models\Rsvp;
 use Illuminate\Http\RedirectResponse;
@@ -25,7 +26,7 @@ class RsvpAdminController extends Controller
 
     public function approve(Rsvp $rsvp): RedirectResponse
     {
-        DB::transaction(function () use ($rsvp): void {
+        $guest = DB::transaction(function () use ($rsvp): Guest {
             $guest = $rsvp->guest;
 
             if ($guest === null) {
@@ -57,11 +58,32 @@ class RsvpAdminController extends Controller
             }
 
             $rsvp->save();
+
+            return $guest;
         });
+
+        SendAccessCardWhatsappJob::dispatch($guest)->afterCommit();
 
         return redirect()
             ->route('admin.rsvps.index')
-            ->with('success', 'Guest approved. Access card link is ready.');
+            ->with('success', 'Guest approved. Access card is being sent via WhatsApp.');
+    }
+
+    public function resendWhatsapp(Rsvp $rsvp): RedirectResponse
+    {
+        $guest = $rsvp->guest;
+
+        if ($guest === null || ! $guest->is_approved) {
+            return redirect()
+                ->route('admin.rsvps.index')
+                ->with('success', 'Guest must be approved before re-sending the access card.');
+        }
+
+        SendAccessCardWhatsappJob::dispatch($guest, force: true);
+
+        return redirect()
+            ->route('admin.rsvps.index')
+            ->with('success', 'Resending WhatsApp access card to '.$guest->name.'.');
     }
 
     public function revokeAttendance(Rsvp $rsvp): RedirectResponse
