@@ -27,7 +27,7 @@
             <div
                 class="premium-stage--fade-bottom relative flex min-h-[min(78svh,720px)] flex-col premium-stage px-0 pb-4 sm:pb-6 lg:min-h-svh lg:pb-8 xl:pb-10">
                 {{-- Logo: absolutely positioned over slideshow (does not reduce image area) --}}
-                <header class="wedding-hero-header pointer-events-none absolute left-0 right-0 top-0 z-[4]" role="banner">
+                <header class="wedding-hero-header pointer-events-none absolute left-0 right-0 top-0 z-4" role="banner">
                     <div class="wedding-hero-header__frame pointer-events-auto">
                         <img src="{{ asset('images/fifikiki-logo.png') }}" alt="Fifi &amp; Kiki"
                             class="wedding-hero-header__logo" loading="eager" decoding="async" fetchpriority="high">
@@ -35,7 +35,7 @@
                 </header>
 
                 {{-- Hero slideshow: soft frame on small screens only; lg+ = image + premium-stage bg only --}}
-                <div class="relative z-[1] flex min-h-0 w-full flex-1 flex-col items-center justify-center px-0">
+                <div class="relative z-1 flex min-h-0 w-full flex-1 flex-col items-center justify-center px-0">
                     <div id="wedding-hero-slideshow" class="flyer-frame relative w-full rounded-[2px] lg:rounded-none"
                         data-wedding-slideshow data-slideshow-total="{{ $heroSlideCount }}"
                         aria-label="Wedding invitation images" aria-live="polite">
