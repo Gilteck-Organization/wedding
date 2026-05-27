@@ -15,12 +15,12 @@ Route::get('/', [WeddingController::class, 'index'])->name('wedding.home');
 Route::view('/privacy', 'wedding.privacy')->name('wedding.privacy');
 Route::view('/terms', 'wedding.terms')->name('wedding.terms');
 
-Route::redirect('/rsvp', '/#rsvp', 302)->name('rsvp.form');
 Route::post('/rsvp', [RsvpController::class, 'store'])->name('rsvp.submit');
+Route::get('/rsvp', fn () => redirect('/#rsvp'))->name('rsvp.form');
 Route::get('/rsvp/phone-availability', [RsvpController::class, 'phoneAvailability'])
     ->middleware('throttle:60,1')
     ->name('rsvp.phone-availability');
-Route::redirect('/rsvp/confirmation', '/#rsvp', 302)->name('rsvp.confirmation');
+Route::get('/rsvp/confirmation', fn () => redirect('/#rsvp'))->name('rsvp.confirmation');
 
 Route::get('/webhook/whatsapp', [WhatsappWebhookController::class, 'verify'])->name('webhook.whatsapp.verify');
 Route::post('/webhook/whatsapp', [WhatsappWebhookController::class, 'handle'])->name('webhook.whatsapp.handle');

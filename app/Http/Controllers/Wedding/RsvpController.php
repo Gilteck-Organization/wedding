@@ -34,6 +34,7 @@ class RsvpController extends Controller
             return redirect()
                 ->route('wedding.home')
                 ->withFragment('rsvp')
+                ->withInput()
                 ->withErrors([
                     'capacity' => 'RSVP is closed — our guest list is full. Thank you for thinking of us.',
                 ]);

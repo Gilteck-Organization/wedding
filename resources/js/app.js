@@ -245,12 +245,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (form instanceof HTMLFormElement) {
             form.addEventListener('submit', (event) => {
-                if (iti.isValidNumber()) {
-                    input.value = iti.getNumber();
+                const submitButton = form.querySelector('button[type="submit"]');
+
+                const releaseSubmitButton = () => {
+                    if (!(submitButton instanceof HTMLButtonElement)) {
+                        return;
+                    }
+                    submitButton.disabled = false;
+                    submitButton.classList.remove('is-loading');
+                    submitButton.removeAttribute('aria-busy');
+                };
+
+                if (!iti.isValidNumber()) {
+                    const message = 'Please enter a valid WhatsApp number.';
+                    setLiveError(message);
+                    event.preventDefault();
+                    releaseSubmitButton();
+                    input.reportValidity();
+
+                    return;
                 }
+
+                input.value = iti.getNumber();
 
                 if (!input.checkValidity()) {
                     event.preventDefault();
+                    releaseSubmitButton();
                     input.reportValidity();
                 }
             });
@@ -258,36 +278,50 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     /** Wire-style loading: disable submit + spinner on forms using .btn-wired */
-    document.addEventListener(
-        'submit',
-        (event) => {
-            const form = event.target;
-            if (!(form instanceof HTMLFormElement)) {
-                return;
-            }
-            if (form.dataset.noWiredLoading === 'true') {
-                return;
-            }
+    document.addEventListener('submit', (event) => {
+        if (event.defaultPrevented) {
+            return;
+        }
 
-            let button =
-                event.submitter instanceof HTMLButtonElement && event.submitter.type === 'submit'
-                    ? event.submitter
-                    : form.querySelector('button[type="submit"]');
+        const form = event.target;
+        if (!(form instanceof HTMLFormElement)) {
+            return;
+        }
+        if (form.dataset.noWiredLoading === 'true') {
+            return;
+        }
 
-            if (!(button instanceof HTMLButtonElement) || !button.classList.contains('btn-wired')) {
-                return;
-            }
+        let button =
+            event.submitter instanceof HTMLButtonElement && event.submitter.type === 'submit'
+                ? event.submitter
+                : form.querySelector('button[type="submit"]');
 
-            if (button.disabled || button.classList.contains('is-loading')) {
+        if (!(button instanceof HTMLButtonElement) || !button.classList.contains('btn-wired')) {
+            return;
+        }
+
+        if (button.disabled || button.classList.contains('is-loading')) {
+            return;
+        }
+
+        // Defer disabling so the browser can complete the native form POST first.
+        queueMicrotask(() => {
+            if (event.defaultPrevented) {
                 return;
             }
 
             button.disabled = true;
             button.classList.add('is-loading');
             button.setAttribute('aria-busy', 'true');
-        },
-        true
-    );
+        });
+    });
+
+    if (document.querySelector('[data-rsvp-has-errors]')) {
+        const rsvpSection = document.getElementById('rsvp');
+        if (rsvpSection instanceof HTMLElement) {
+            rsvpSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
 
     const preloader = document.getElementById('wedding-preloader');
     if (preloader) {

@@ -76,7 +76,7 @@
                         </p>
                     </div>
 
-                    <section id="rsvp" class="mt-10 scroll-mt-8">
+                    <section id="rsvp" class="mt-10 scroll-mt-8" @if ($errors->any() && ! session('rsvp_success')) data-rsvp-has-errors @endif>
                         <h2 class="text-center font-serif text-xl text-wedding-primary tracking-wide">
                             RSVP
                         </h2>
