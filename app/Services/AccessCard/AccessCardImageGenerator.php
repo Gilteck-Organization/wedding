@@ -32,20 +32,31 @@ class AccessCardImageGenerator
      */
     public function ensureCached(Guest $guest): string
     {
-        $path = $this->cachePath($guest);
+        $guest->loadMissing('latestRsvp');
 
-        if (! Storage::disk('local')->exists($path)) {
-            $this->writeCache($guest);
+        $path = $this->cachePath($guest);
+        $fingerprint = $this->cacheFingerprint($guest);
+        $metaPath = $path.'.meta';
+
+        if (
+            Storage::disk('local')->exists($path)
+            && Storage::disk('local')->exists($metaPath)
+            && Storage::disk('local')->get($metaPath) === $fingerprint
+        ) {
+            return Storage::disk('local')->path($path);
         }
+
+        $this->writeCache($guest, $fingerprint);
 
         return Storage::disk('local')->path($path);
     }
 
     /**
-     * Render the access card to a JPEG binary string.
+     * Render the access card to a JPEG binary string (template + guest name + QR).
      */
     public function render(Guest $guest): string
     {
+        $guest->loadMissing('latestRsvp');
         $this->assertRenderable($guest);
 
         $base = $this->loadTemplateImage();
@@ -53,6 +64,53 @@ class AccessCardImageGenerator
         $width = imagesx($base);
         $height = imagesy($base);
 
+        $this->drawGuestDetails($base, $guest, $width, $height);
+        $this->drawQrCode($base, $guest, $width, $height);
+
+        ob_start();
+        $quality = (int) config('wedding.access_card_image.jpeg_quality', 88);
+        imagejpeg($base, null, $quality);
+        imagedestroy($base);
+        $binary = ob_get_clean();
+
+        if (! is_string($binary) || $binary === '') {
+            throw new RuntimeException('Failed to encode access card image.');
+        }
+
+        return $binary;
+    }
+
+    private function writeCache(Guest $guest, string $fingerprint): void
+    {
+        $path = $this->cachePath($guest);
+        Storage::disk('local')->put($path, $this->render($guest));
+        Storage::disk('local')->put($path.'.meta', $fingerprint);
+    }
+
+    private function cacheFingerprint(Guest $guest): string
+    {
+        return hash('sha256', implode('|', [
+            $guest->name,
+            (string) $guest->qr_code,
+            (string) $guest->latestRsvp?->guest_count,
+            json_encode(config('wedding.access_card_image')),
+        ]));
+    }
+
+    private function cachePath(Guest $guest): string
+    {
+        return 'access-cards/'.$guest->access_token.'.jpg';
+    }
+
+    private function assertRenderable(Guest $guest): void
+    {
+        if (! $guest->is_approved || ! filled($guest->qr_code)) {
+            throw new RuntimeException('Access card image requires an approved guest with a QR code.');
+        }
+    }
+
+    private function drawQrCode(GdImage $base, Guest $guest, int $width, int $height): void
+    {
         $layout = config('wedding.access_card_image');
         $qrSize = (int) round($width * ((float) ($layout['qr_size_percent'] ?? 17.14) / 100));
         $qrCenterX = (int) round($width * ((float) ($layout['qr_left_percent'] ?? 28) / 100));
@@ -76,37 +134,91 @@ class AccessCardImageGenerator
         );
 
         imagedestroy($qrImage);
+    }
 
-        ob_start();
-        $quality = (int) config('wedding.access_card_image.jpeg_quality', 88);
-        imagejpeg($base, null, $quality);
-        imagedestroy($base);
-        $binary = ob_get_clean();
+    private function drawGuestDetails(GdImage $base, Guest $guest, int $width, int $height): void
+    {
+        $layout = config('wedding.access_card_image');
+        $centerX = (int) round($width * ((float) ($layout['name_left_percent'] ?? 50) / 100));
+        $topY = (int) round($height * ((float) ($layout['name_top_percent'] ?? 58) / 100));
 
-        if (! is_string($binary) || $binary === '') {
-            throw new RuntimeException('Failed to encode access card image.');
+        $nameSize = (int) round($width * ((float) ($layout['name_font_size_percent'] ?? 3.4) / 100));
+        $partySize = (int) round($width * ((float) ($layout['party_font_size_percent'] ?? 2.9) / 100));
+
+        $textColor = imagecolorallocate($base, 58, 44, 23);
+
+        $this->drawCenteredText(
+            $base,
+            $this->fontPath('bold'),
+            $nameSize,
+            $textColor,
+            $centerX,
+            $topY + $nameSize,
+            'Guest: '.$guest->name,
+        );
+
+        $partyLine = $this->partyLine($guest);
+
+        if ($partyLine === null) {
+            return;
         }
 
-        return $binary;
+        $this->drawCenteredText(
+            $base,
+            $this->fontPath('regular'),
+            $partySize,
+            $textColor,
+            $centerX,
+            $topY + $nameSize + $partySize + (int) round($width * 0.012),
+            $partyLine,
+        );
     }
 
-    private function writeCache(Guest $guest): void
+    private function partyLine(Guest $guest): ?string
     {
-        Storage::disk('local')->put($this->cachePath($guest), $this->render($guest));
-    }
+        $partySize = $guest->latestRsvp?->guest_count;
+        $additionalGuests = $partySize !== null && $partySize > 1 ? $partySize - 1 : null;
 
-    private function cachePath(Guest $guest): string
-    {
-        $token = (string) $guest->access_token;
-
-        return 'access-cards/'.$token.'.jpg';
-    }
-
-    private function assertRenderable(Guest $guest): void
-    {
-        if (! $guest->is_approved || ! filled($guest->qr_code)) {
-            throw new RuntimeException('Access card image requires an approved guest with a QR code.');
+        if ($additionalGuests === 1) {
+            return 'Plus one guest';
         }
+
+        if ($additionalGuests !== null && $additionalGuests > 1) {
+            return 'Plus '.$additionalGuests.' guests';
+        }
+
+        return null;
+    }
+
+    private function drawCenteredText(
+        GdImage $image,
+        string $fontPath,
+        int $fontSize,
+        int $color,
+        int $centerX,
+        int $baselineY,
+        string $text,
+    ): void {
+        $box = imagettfbbox($fontSize, 0, $fontPath, $text);
+        $textWidth = abs($box[2] - $box[0]);
+        $x = $centerX - (int) round($textWidth / 2);
+
+        imagettftext($image, $fontSize, 0, $x, $baselineY, $color, $fontPath, $text);
+    }
+
+    private function fontPath(string $weight): string
+    {
+        $file = $weight === 'bold'
+            ? 'CinzelDecorative-Bold.ttf'
+            : 'CinzelDecorative-Regular.ttf';
+
+        $path = resource_path('fonts/'.$file);
+
+        if (! is_file($path)) {
+            throw new RuntimeException('Access card font is missing: '.$file);
+        }
+
+        return $path;
     }
 
     private function loadTemplateImage(): GdImage

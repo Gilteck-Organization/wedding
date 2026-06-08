@@ -32,6 +32,10 @@ return [
         'qr_top_percent' => 75,
         'qr_left_percent' => 28,
         'qr_size_percent' => 17.14,
+        'name_top_percent' => 58,
+        'name_left_percent' => 50,
+        'name_font_size_percent' => 3.4,
+        'party_font_size_percent' => 2.9,
     ],
 
     /*
