@@ -43,9 +43,13 @@ return [
         'verify_token' => env('WHATSAPP_VERIFY_TOKEN'),
         'template_name' => env('WHATSAPP_TEMPLATE_NAME'),
         'template_language' => env('WHATSAPP_TEMPLATE_LANGUAGE', 'en'),
+        'template_body_param_name' => env('WHATSAPP_TEMPLATE_BODY_PARAM_NAME', 'n'),
         'graph_version' => env('WHATSAPP_GRAPH_VERSION', 'v21.0'),
-        'header_image_url' => env('WHATSAPP_HEADER_IMAGE_URL'),
-        'button_url_param_enabled' => env('WHATSAPP_BUTTON_URL_PARAM_ENABLED', true),
+        /*
+         * Public HTTPS origin for per-guest access card images in WhatsApp headers.
+         * Set on staging/production (e.g. https://staging.fifiandkiki.com). Leave unset on local Herd.
+         */
+        'public_app_url' => env('WHATSAPP_PUBLIC_APP_URL'),
     ],
 
 ];

@@ -25,6 +25,9 @@ Route::get('/rsvp/confirmation', fn () => redirect('/#rsvp'))->name('rsvp.confir
 Route::get('/webhook/whatsapp', [WhatsappWebhookController::class, 'verify'])->name('webhook.whatsapp.verify');
 Route::post('/webhook/whatsapp', [WhatsappWebhookController::class, 'handle'])->name('webhook.whatsapp.handle');
 
+Route::get('/access-card/{guest}/image.jpg', [AccessCardController::class, 'image'])
+    ->where('guest', '[a-z]{5}')
+    ->name('access-card.image');
 Route::get('/access-card/{guest}', [AccessCardController::class, 'show'])
     ->where('guest', '[a-z]{5}')
     ->name('access-card');

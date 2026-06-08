@@ -6,6 +6,7 @@ use App\Jobs\SendAccessCardWhatsappJob;
 use App\Models\Guest;
 use App\Models\Rsvp;
 use App\Models\User;
+use App\Services\AccessCard\AccessCardImageGenerator;
 use App\Services\Whatsapp\WhatsappClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
@@ -26,10 +27,34 @@ class WhatsappAccessCardSendTest extends TestCase
             'services.whatsapp.template_name' => 'rsvp_approved_access_card',
             'services.whatsapp.template_language' => 'en',
             'services.whatsapp.graph_version' => 'v21.0',
-            'services.whatsapp.header_image_url' => 'https://fifiandkiki.com/images/slide-1.png',
-            'services.whatsapp.button_url_param_enabled' => true,
+            'services.whatsapp.template_body_param_name' => 'n',
             'services.whatsapp.app_secret' => null,
+            'services.whatsapp.public_app_url' => 'https://staging.fifiandkiki.com',
+            'app.url' => 'http://wedding.test',
         ]);
+    }
+
+    private function approvedGuest(array $overrides = []): Guest
+    {
+        $guest = Guest::query()->create(array_merge([
+            'name' => 'Test Guest',
+            'phone' => '+1 (984) 658-1828',
+            'is_approved' => true,
+        ], $overrides));
+
+        $guest->update([
+            'qr_code' => route('access-card.verify', $guest, absolute: true),
+        ]);
+
+        return $guest->fresh();
+    }
+
+    private function runJob(SendAccessCardWhatsappJob $job): void
+    {
+        $job->handle(
+            app(WhatsappClient::class),
+            app(AccessCardImageGenerator::class),
+        );
     }
 
     public function test_approval_dispatches_whatsapp_job_after_transaction_commit(): void
@@ -53,10 +78,10 @@ class WhatsappAccessCardSendTest extends TestCase
         Bus::assertDispatchedAfterResponse(SendAccessCardWhatsappJob::class);
     }
 
-    public function test_job_posts_correct_payload_to_meta_graph_api(): void
+    public function test_job_posts_per_guest_access_card_url_to_meta_graph_api(): void
     {
         Http::fake([
-            'graph.facebook.com/*' => Http::response([
+            'graph.facebook.com/v21.0/1234567890/messages' => Http::response([
                 'messaging_product' => 'whatsapp',
                 'contacts' => [['input' => '19846581828', 'wa_id' => '19846581828']],
                 'messages' => [['id' => 'wamid.TEST123']],
@@ -67,11 +92,15 @@ class WhatsappAccessCardSendTest extends TestCase
             'name' => 'Ada Lovelace',
             'phone' => '+1 (984) 658-1828',
             'is_approved' => true,
+            'access_token' => 'abcde',
+            'qr_code' => route('access-card.verify', 'abcde', absolute: true),
         ]);
 
-        (new SendAccessCardWhatsappJob($guest))->handle(app(WhatsappClient::class));
+        $expectedImageUrl = 'https://staging.fifiandkiki.com/access-card/abcde/image.jpg';
 
-        Http::assertSent(function ($request) use ($guest): bool {
+        $this->runJob(new SendAccessCardWhatsappJob($guest));
+
+        Http::assertSent(function ($request) use ($guest, $expectedImageUrl): bool {
             if (! str_contains($request->url(), '/v21.0/1234567890/messages')) {
                 return false;
             }
@@ -83,10 +112,10 @@ class WhatsappAccessCardSendTest extends TestCase
                 && $body['template']['name'] === 'rsvp_approved_access_card'
                 && $body['template']['language']['code'] === 'en'
                 && $body['template']['components'][0]['type'] === 'header'
-                && $body['template']['components'][0]['parameters'][0]['image']['link'] === 'https://fifiandkiki.com/images/slide-1.png'
+                && $body['template']['components'][0]['parameters'][0]['image']['link'] === $expectedImageUrl
+                && $body['template']['components'][1]['parameters'][0]['parameter_name'] === 'n'
                 && $body['template']['components'][1]['parameters'][0]['text'] === $guest->name
-                && $body['template']['components'][2]['sub_type'] === 'url'
-                && $body['template']['components'][2]['parameters'][0]['text'] === $guest->access_token;
+                && count($body['template']['components']) === 2;
         });
 
         $guest->refresh();
@@ -109,14 +138,10 @@ class WhatsappAccessCardSendTest extends TestCase
             ], 400),
         ]);
 
-        $guest = Guest::query()->create([
-            'name' => 'Test',
-            'phone' => '+1 (984) 658-1828',
-            'is_approved' => true,
-        ]);
+        $guest = $this->approvedGuest();
 
         try {
-            (new SendAccessCardWhatsappJob($guest))->handle(app(WhatsappClient::class));
+            $this->runJob(new SendAccessCardWhatsappJob($guest));
         } catch (\Throwable) {
         }
 
@@ -129,15 +154,12 @@ class WhatsappAccessCardSendTest extends TestCase
     {
         Http::fake();
 
-        $guest = Guest::query()->create([
-            'name' => 'Test',
-            'phone' => '+1 (984) 658-1828',
-            'is_approved' => true,
+        $guest = $this->approvedGuest([
             'whatsapp_message_id' => 'wamid.PREVIOUS',
             'whatsapp_status' => 'delivered',
         ]);
 
-        (new SendAccessCardWhatsappJob($guest))->handle(app(WhatsappClient::class));
+        $this->runJob(new SendAccessCardWhatsappJob($guest));
 
         Http::assertNothingSent();
     }
@@ -145,21 +167,17 @@ class WhatsappAccessCardSendTest extends TestCase
     public function test_force_resend_bypasses_idempotency_check(): void
     {
         Http::fake([
-            'graph.facebook.com/*' => Http::response([
+            'graph.facebook.com/v21.0/1234567890/messages' => Http::response([
                 'messages' => [['id' => 'wamid.RESEND']],
             ], 200),
         ]);
 
-        $guest = Guest::query()->create([
-            'name' => 'Test',
-            'phone' => '+1 (984) 658-1828',
-            'is_approved' => true,
+        $guest = $this->approvedGuest([
             'whatsapp_message_id' => 'wamid.OLD',
             'whatsapp_status' => 'delivered',
         ]);
 
-        (new SendAccessCardWhatsappJob($guest, force: true))
-            ->handle(app(WhatsappClient::class));
+        $this->runJob(new SendAccessCardWhatsappJob($guest, force: true));
 
         $guest->refresh();
         $this->assertSame('wamid.RESEND', $guest->whatsapp_message_id);
@@ -175,11 +193,27 @@ class WhatsappAccessCardSendTest extends TestCase
             'is_approved' => true,
         ]);
 
-        (new SendAccessCardWhatsappJob($guest))->handle(app(WhatsappClient::class));
+        $this->runJob(new SendAccessCardWhatsappJob($guest));
 
         $guest->refresh();
         $this->assertSame('failed', $guest->whatsapp_status);
         $this->assertNotNull($guest->whatsapp_error);
+        Http::assertNothingSent();
+    }
+
+    public function test_job_records_failure_when_public_app_url_is_not_set(): void
+    {
+        Http::fake();
+
+        config(['services.whatsapp.public_app_url' => null]);
+
+        $guest = $this->approvedGuest();
+
+        $this->runJob(new SendAccessCardWhatsappJob($guest));
+
+        $guest->refresh();
+        $this->assertSame('failed', $guest->whatsapp_status);
+        $this->assertStringContainsString('WHATSAPP_PUBLIC_APP_URL', (string) $guest->whatsapp_error);
         Http::assertNothingSent();
     }
 }

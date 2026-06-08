@@ -23,6 +23,18 @@ return [
     ],
 
     /*
+    | Layout for server-rendered access card images (WhatsApp header, etc.).
+    | Percentages mirror resources/css/app.css → .access-card-stage custom properties.
+    */
+    'access_card_image' => [
+        'max_width' => 1200,
+        'jpeg_quality' => 88,
+        'qr_top_percent' => 75,
+        'qr_left_percent' => 28,
+        'qr_size_percent' => 17.14,
+    ],
+
+    /*
     | Total venue capacity (seats / guests) for the celebration. Used on the admin dashboard.
     */
     'venue_capacity' => (int) env('WEDDING_VENUE_CAPACITY', 350),

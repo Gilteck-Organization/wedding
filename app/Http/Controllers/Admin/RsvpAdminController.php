@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Jobs\SendAccessCardWhatsappJob;
 use App\Models\Guest;
 use App\Models\Rsvp;
+use App\Services\Whatsapp\WhatsappSendGuard;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
@@ -62,11 +63,17 @@ class RsvpAdminController extends Controller
             return $guest;
         });
 
-        SendAccessCardWhatsappJob::dispatch($guest)->afterCommit();
+        if (WhatsappSendGuard::isReadyToSend()) {
+            SendAccessCardWhatsappJob::dispatch($guest)->afterCommit();
+
+            return redirect()
+                ->route('admin.rsvps.index')
+                ->with('success', 'Guest approved. Access card is being sent via WhatsApp.');
+        }
 
         return redirect()
             ->route('admin.rsvps.index')
-            ->with('success', 'Guest approved. Access card is being sent via WhatsApp.');
+            ->with('success', 'Guest approved. WhatsApp is not configured (set WHATSAPP_PUBLIC_APP_URL on staging/production).');
     }
 
     public function resendWhatsapp(Rsvp $rsvp): RedirectResponse
@@ -77,6 +84,12 @@ class RsvpAdminController extends Controller
             return redirect()
                 ->route('admin.rsvps.index')
                 ->with('success', 'Guest must be approved before re-sending the access card.');
+        }
+
+        if (! WhatsappSendGuard::isReadyToSend()) {
+            return redirect()
+                ->route('admin.rsvps.index')
+                ->with('success', 'Set WHATSAPP_PUBLIC_APP_URL on staging/production before resending WhatsApp.');
         }
 
         SendAccessCardWhatsappJob::dispatch($guest, force: true);

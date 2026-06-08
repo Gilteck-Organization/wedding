@@ -53,6 +53,27 @@ class AccessCardTest extends TestCase
         $response->assertDontSee('Access name', false);
     }
 
+    public function test_access_card_image_returns_jpeg_for_approved_guest(): void
+    {
+        $guest = $this->approvedGuestWithVerifyQr('Jane Guest');
+
+        $response = $this->get(route('access-card.image', $guest));
+
+        $response->assertOk();
+        $this->assertStringContainsString('image/jpeg', (string) $response->headers->get('Content-Type'));
+    }
+
+    public function test_access_card_image_returns_not_found_when_not_approved(): void
+    {
+        $guest = Guest::query()->create([
+            'name' => 'Pending Guest',
+            'phone' => '555-0100',
+            'is_approved' => false,
+        ]);
+
+        $this->get(route('access-card.image', $guest))->assertNotFound();
+    }
+
     public function test_verify_url_shows_access_name_gate_when_not_authenticated_or_unlocked(): void
     {
         AccessName::query()->create(['name' => 'SharedCode']);

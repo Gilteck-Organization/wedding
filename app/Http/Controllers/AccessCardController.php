@@ -5,8 +5,11 @@ namespace App\Http\Controllers;
 use App\Http\Requests\UnlockAccessCardRequest;
 use App\Models\AccessName;
 use App\Models\Guest;
+use App\Services\AccessCard\AccessCardImageGenerator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use RuntimeException;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class AccessCardController extends Controller
 {
@@ -19,6 +22,26 @@ class AccessCardController extends Controller
 
         return view('wedding.access-card', [
             'guest' => $guest,
+        ]);
+    }
+
+    /**
+     * Personalised access card JPEG for WhatsApp template headers and other integrations.
+     * Meta's servers fetch this URL when sending the approved template.
+     */
+    public function image(Guest $guest, AccessCardImageGenerator $generator): BinaryFileResponse
+    {
+        $guest->load('latestRsvp');
+
+        try {
+            $path = $generator->ensureCached($guest);
+        } catch (RuntimeException) {
+            abort(404);
+        }
+
+        return response()->file($path, [
+            'Content-Type' => 'image/jpeg',
+            'Cache-Control' => 'public, max-age=604800',
         ]);
     }
 
