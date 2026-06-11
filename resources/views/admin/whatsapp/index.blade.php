@@ -6,7 +6,7 @@
             <div>
                 <h1 class="font-serif text-3xl text-[#2c2418]">WhatsApp delivery</h1>
                 <p class="mt-2 text-sm text-[#2c2418]/70">
-                    Guests receive a greeting reminder first, then their access card a moment later.
+                    Step 1: send welcome reminders on approval. Step 2: send access cards when you are ready from this page.
                 </p>
             </div>
             <a href="{{ route('admin.rsvps.index') }}"
@@ -36,19 +36,19 @@
             </div>
             <div class="rounded-none border border-[#946112]/20 bg-[#fffdf8]/95 px-4 py-3 shadow-sm">
                 <p class="text-xs font-semibold uppercase tracking-wide text-[#2c2418]/50">No reminder yet</p>
-                <p class="mt-1 font-serif text-2xl text-[#2c2418]">{{ $stats['never_sent'] }}</p>
+                <p class="mt-1 font-serif text-2xl text-[#2c2418]">{{ $stats['no_reminder'] }}</p>
             </div>
             <div class="rounded-none border border-[#946112]/20 bg-[#fffdf8]/95 px-4 py-3 shadow-sm">
-                <p class="text-xs font-semibold uppercase tracking-wide text-[#2c2418]/50">Reminder only</p>
+                <p class="text-xs font-semibold uppercase tracking-wide text-[#2c2418]/50">Awaiting card</p>
                 <p class="mt-1 font-serif text-2xl text-[#2c2418]">{{ $stats['reminder_only'] }}</p>
             </div>
             <div class="rounded-none border border-[#946112]/20 bg-[#fffdf8]/95 px-4 py-3 shadow-sm">
-                <p class="text-xs font-semibold uppercase tracking-wide text-[#2c2418]/50">Sent / queued</p>
-                <p class="mt-1 font-serif text-2xl text-[#2c2418]">{{ $stats['sent'] }}</p>
+                <p class="text-xs font-semibold uppercase tracking-wide text-[#2c2418]/50">Cards sent</p>
+                <p class="mt-1 font-serif text-2xl text-[#2c2418]">{{ $stats['cards_sent'] }}</p>
             </div>
             <div class="rounded-none border border-[#946112]/20 bg-[#fffdf8]/95 px-4 py-3 shadow-sm">
-                <p class="text-xs font-semibold uppercase tracking-wide text-[#2c2418]/50">Delivered / read</p>
-                <p class="mt-1 font-serif text-2xl text-[#946112]">{{ $stats['delivered'] }}</p>
+                <p class="text-xs font-semibold uppercase tracking-wide text-[#2c2418]/50">Cards delivered</p>
+                <p class="mt-1 font-serif text-2xl text-[#946112]">{{ $stats['cards_delivered'] }}</p>
             </div>
             <div class="rounded-none border border-[#946112]/20 bg-[#fffdf8]/95 px-4 py-3 shadow-sm">
                 <p class="text-xs font-semibold uppercase tracking-wide text-[#2c2418]/50">Failed</p>
@@ -59,32 +59,61 @@
         <form action="{{ route('admin.whatsapp.send') }}" method="POST" class="mt-6 space-y-4">
             @csrf
 
-            <div class="flex flex-wrap gap-3">
-                <button type="submit" name="action" value="all_pending"
-                    class="btn-wired px-5 py-2.5 text-xs sm:text-sm"
-                    @disabled(! $whatsappConfigured)
-                    onclick="return confirm('Send to all approved guests who were never sent or failed?')">
-                    <span class="btn-wired__text">Send pending &amp; failed</span>
-                </button>
-                <button type="submit" name="action" value="all_failed"
-                    class="inline-flex items-center justify-center rounded-none px-5 py-2.5 text-xs font-semibold text-[#803b48] border border-[#803b48]/40 bg-white/70 shadow-sm hover:-translate-y-0.5 transition-all disabled:opacity-50"
-                    @disabled(! $whatsappConfigured)
-                    onclick="return confirm('Resend to all failed guests?')">
-                    Resend all failed
-                </button>
-                <button type="submit" name="action" value="all_approved"
-                    class="inline-flex items-center justify-center rounded-none px-5 py-2.5 text-xs font-semibold text-[#2c2418] border border-[#946112]/40 bg-white/70 shadow-sm hover:-translate-y-0.5 transition-all disabled:opacity-50"
-                    @disabled(! $whatsappConfigured)
-                    onclick="return confirm('Force resend to every approved guest? Use only if you need to refresh all cards.')">
-                    Resend all approved
-                </button>
-                <button type="submit" name="action" value="selected"
-                    class="inline-flex items-center justify-center rounded-none px-5 py-2.5 text-xs font-semibold text-[#2c2418] border border-[#946112]/40 bg-white/70 shadow-sm hover:-translate-y-0.5 transition-all disabled:opacity-50"
-                    @disabled(! $whatsappConfigured)
-                    onclick="return confirm('Send to selected guests?')">
-                    Send selected
-                </button>
+            <div class="space-y-4">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-[#2c2418]/60 mb-2">Step 1 — Welcome reminders</p>
+                    <div class="flex flex-wrap gap-3">
+                        <button type="submit" name="action" value="all_pending"
+                            class="btn-wired px-5 py-2.5 text-xs sm:text-sm"
+                            @disabled(! $whatsappConfigured)
+                            onclick="document.getElementById('whatsapp-phase').value='reminder'; return confirm('Send welcome reminders to all guests who have not received one?')">
+                            <span class="btn-wired__text">Send pending reminders</span>
+                        </button>
+                        <button type="submit" name="action" value="all_failed"
+                            class="inline-flex items-center justify-center rounded-none px-5 py-2.5 text-xs font-semibold text-[#803b48] border border-[#803b48]/40 bg-white/70 shadow-sm hover:-translate-y-0.5 transition-all disabled:opacity-50"
+                            @disabled(! $whatsappConfigured)
+                            onclick="document.getElementById('whatsapp-phase').value='reminder'; return confirm('Resend failed reminders?')">
+                            Resend failed reminders
+                        </button>
+                        <button type="submit" name="action" value="selected"
+                            class="inline-flex items-center justify-center rounded-none px-5 py-2.5 text-xs font-semibold text-[#2c2418] border border-[#946112]/40 bg-white/70 shadow-sm hover:-translate-y-0.5 transition-all disabled:opacity-50"
+                            @disabled(! $whatsappConfigured)
+                            onclick="document.getElementById('whatsapp-phase').value='reminder'; return confirm('Send reminder to selected guests?')">
+                            Reminder — selected
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-[#2c2418]/60 mb-2">Step 2 — Access cards (after reminders)</p>
+                    <div class="flex flex-wrap gap-3">
+                        <button type="submit" name="action" value="all_ready"
+                            class="btn-wired px-5 py-2.5 text-xs sm:text-sm"
+                            @disabled(! $whatsappConfigured)
+                            onclick="document.getElementById('whatsapp-phase').value='access_card'; return confirm('Send access cards to all guests who received a reminder but not yet a card?')">
+                            <span class="btn-wired__text">Send access cards (ready)</span>
+                        </button>
+                        <button type="submit" name="action" value="all_failed"
+                            class="inline-flex items-center justify-center rounded-none px-5 py-2.5 text-xs font-semibold text-[#803b48] border border-[#803b48]/40 bg-white/70 shadow-sm hover:-translate-y-0.5 transition-all disabled:opacity-50"
+                            @disabled(! $whatsappConfigured)
+                            onclick="document.getElementById('whatsapp-phase').value='access_card'; return confirm('Resend failed access cards?')">
+                            Resend failed cards
+                        </button>
+                        <button type="submit" name="action" value="selected"
+                            class="inline-flex items-center justify-center rounded-none px-5 py-2.5 text-xs font-semibold text-[#2c2418] border border-[#946112]/40 bg-white/70 shadow-sm hover:-translate-y-0.5 transition-all disabled:opacity-50"
+                            @disabled(! $whatsappConfigured)
+                            onclick="document.getElementById('whatsapp-phase').value='access_card'; return confirm('Send access card to selected guests? They must already have a reminder.')">
+                            Access card — selected
+                        </button>
+                        <button type="submit" name="action" value="all_approved"
+                            class="inline-flex items-center justify-center rounded-none px-5 py-2.5 text-xs font-semibold text-[#2c2418]/70 border border-[#946112]/30 bg-white/60 shadow-sm hover:-translate-y-0.5 transition-all disabled:opacity-50"
+                            @disabled(! $whatsappConfigured)
+                            onclick="document.getElementById('whatsapp-phase').value='access_card'; return confirm('Force resend access cards to every guest with a reminder?')">
+                            Resend all cards
+                        </button>
+                    </div>
+                </div>
             </div>
+            <input type="hidden" name="phase" id="whatsapp-phase" value="reminder">
 
             <div class="rounded-none border border-[#946112]/20 bg-[#fffdf8]/95 shadow">
                 <div class="overflow-x-auto">

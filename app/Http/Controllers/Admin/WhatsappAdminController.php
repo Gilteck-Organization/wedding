@@ -10,6 +10,7 @@ use App\Models\Guest;
 use App\Services\Whatsapp\WhatsappSendGuard;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class WhatsappAdminController extends Controller
@@ -24,11 +25,11 @@ class WhatsappAdminController extends Controller
 
         $stats = [
             'total' => $guests->count(),
-            'never_sent' => $guests->filter(fn (Guest $guest): bool => $guest->whatsapp_reminder_sent_at === null)->count(),
+            'no_reminder' => $guests->filter(fn (Guest $guest): bool => $guest->whatsapp_reminder_sent_at === null)->count(),
             'reminder_only' => $guests->filter(fn (Guest $guest): bool => $guest->whatsapp_reminder_sent_at !== null && $guest->whatsapp_status === null)->count(),
-            'sent' => $guests->whereIn('whatsapp_status', ['sent', 'delivered', 'read'])->count(),
+            'cards_sent' => $guests->whereIn('whatsapp_status', ['sent', 'delivered', 'read'])->count(),
+            'cards_delivered' => $guests->whereIn('whatsapp_status', ['delivered', 'read'])->count(),
             'failed' => $guests->filter(fn (Guest $guest): bool => filled($guest->whatsapp_reminder_error) || in_array($guest->whatsapp_status, ['failed', 'retrying'], true))->count(),
-            'delivered' => $guests->whereIn('whatsapp_status', ['delivered', 'read'])->count(),
         ];
 
         return view('admin.whatsapp.index', [
@@ -46,94 +47,103 @@ class WhatsappAdminController extends Controller
                 ->with('success', 'WhatsApp is not configured. Set WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_NUMBER_ID, WHATSAPP_REMINDER_TEMPLATE_NAME, and WHATSAPP_TEMPLATE_NAME.');
         }
 
+        $phase = (string) $request->validated('phase');
         $action = (string) $request->validated('action');
 
-        $query = Guest::query()
-            ->where('is_approved', true);
-
-        $query = match ($action) {
-            'selected' => $query->whereIn('id', $request->validated('guest_ids', [])),
-            'all_pending' => $query->where(function (Builder $builder): void {
-                $builder
-                    ->whereNull('whatsapp_reminder_sent_at')
-                    ->orWhereNotNull('whatsapp_reminder_error')
-                    ->orWhereNull('whatsapp_status')
-                    ->orWhere('whatsapp_status', 'failed');
-            }),
-            'all_failed' => $query->where(function (Builder $builder): void {
-                $builder
-                    ->whereNotNull('whatsapp_reminder_error')
-                    ->orWhereIn('whatsapp_status', ['failed', 'retrying']);
-            }),
-            'all_approved' => $query,
-            default => $query->whereRaw('0 = 1'),
-        };
-
-        $guests = $query->get();
+        $guests = $this->guestsForAction($phase, $action, $request->validated('guest_ids', []));
 
         if ($guests->isEmpty()) {
             return redirect()
                 ->route('admin.whatsapp.index')
-                ->with('success', 'No guests matched that send action.');
+                ->with('success', 'No guests matched that action.');
         }
 
         $queued = 0;
 
         foreach ($guests as $guest) {
-            if ($this->shouldSendFullSequence($guest, $action)) {
+            if ($phase === 'reminder') {
                 SendWhatsappReminderJob::dispatch($guest, force: $this->shouldForceReminder($guest, $action));
                 $queued++;
 
                 continue;
             }
 
-            if ($this->shouldSendAccessCardOnly($guest)) {
-                SendAccessCardWhatsappJob::dispatch($guest, force: true);
-                $queued++;
+            if ($guest->whatsapp_reminder_sent_at === null) {
+                continue;
             }
+
+            SendAccessCardWhatsappJob::dispatch($guest, force: $this->shouldForceAccessCard($guest, $action));
+            $queued++;
         }
 
         if ($queued === 0) {
             return redirect()
                 ->route('admin.whatsapp.index')
-                ->with('success', 'No guests needed a WhatsApp resend.');
+                ->with('success', 'No guests were queued. Access cards require a reminder to be sent first.');
         }
 
-        $label = match ($action) {
-            'selected' => 'Selected guests',
-            'all_pending' => 'Guests pending reminder or access card',
-            'all_failed' => 'Failed guests',
-            'all_approved' => 'All approved guests',
+        $label = match ([$phase, $action]) {
+            ['reminder', 'all_pending'] => 'Pending reminders',
+            ['reminder', 'all_failed'] => 'Failed reminders',
+            ['reminder', 'all_approved'] => 'All reminders (resend)',
+            ['reminder', 'selected'] => 'Selected reminders',
+            ['access_card', 'all_ready'] => 'Guests ready for access cards',
+            ['access_card', 'all_pending'] => 'Pending access cards',
+            ['access_card', 'all_failed'] => 'Failed access cards',
+            ['access_card', 'all_approved'] => 'All access cards (resend)',
+            ['access_card', 'selected'] => 'Selected access cards',
             default => 'Guests',
         };
 
         return redirect()
             ->route('admin.whatsapp.index')
-            ->with('success', $label.' ('.$queued.') queued. Reminder goes first, access card follows after a short delay.');
+            ->with('success', $label.' ('.$queued.') queued.');
     }
 
-    private function shouldSendFullSequence(Guest $guest, string $action): bool
+    /**
+     * @param  array<int, int>  $guestIds
+     * @return Collection<int, Guest>
+     */
+    private function guestsForAction(string $phase, string $action, array $guestIds)
     {
-        if ($action === 'all_approved') {
-            return true;
+        $query = Guest::query()->where('is_approved', true);
+
+        if ($action === 'selected') {
+            return $query->whereIn('id', $guestIds)->get();
         }
 
-        if (filled($guest->whatsapp_reminder_error)) {
-            return true;
+        if ($phase === 'reminder') {
+            return match ($action) {
+                'all_pending' => $query->where(function (Builder $builder): void {
+                    $builder
+                        ->whereNull('whatsapp_reminder_sent_at')
+                        ->orWhereNotNull('whatsapp_reminder_error');
+                })->get(),
+                'all_failed' => $query->whereNotNull('whatsapp_reminder_error')->get(),
+                'all_approved' => $query->get(),
+                default => collect(),
+            };
         }
 
-        if ($guest->whatsapp_reminder_sent_at === null) {
-            return true;
-        }
-
-        return false;
-    }
-
-    private function shouldSendAccessCardOnly(Guest $guest): bool
-    {
-        return $guest->whatsapp_reminder_sent_at !== null
-            && ! filled($guest->whatsapp_reminder_error)
-            && in_array($guest->whatsapp_status, ['failed', 'retrying', null], true);
+        return match ($action) {
+            'all_ready', 'all_pending' => $query
+                ->whereNotNull('whatsapp_reminder_sent_at')
+                ->whereNull('whatsapp_reminder_error')
+                ->where(function (Builder $builder): void {
+                    $builder
+                        ->whereNull('whatsapp_status')
+                        ->orWhereIn('whatsapp_status', ['failed', 'retrying']);
+                })
+                ->get(),
+            'all_failed' => $query
+                ->whereNotNull('whatsapp_reminder_sent_at')
+                ->whereIn('whatsapp_status', ['failed', 'retrying'])
+                ->get(),
+            'all_approved' => $query
+                ->whereNotNull('whatsapp_reminder_sent_at')
+                ->get(),
+            default => collect(),
+        };
     }
 
     private function shouldForceReminder(Guest $guest, string $action): bool
@@ -141,5 +151,12 @@ class WhatsappAdminController extends Controller
         return $action === 'all_approved'
             || filled($guest->whatsapp_reminder_error)
             || ($action === 'selected' && $guest->whatsapp_reminder_sent_at !== null);
+    }
+
+    private function shouldForceAccessCard(Guest $guest, string $action): bool
+    {
+        return $action === 'all_approved'
+            || in_array($guest->whatsapp_status, ['failed', 'retrying'], true)
+            || ($action === 'selected' && $guest->whatsapp_message_id !== null);
     }
 }

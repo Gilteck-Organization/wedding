@@ -32,7 +32,6 @@ class WhatsappAccessCardSendTest extends TestCase
             'services.whatsapp.template_body_param_name' => 'n',
             'services.whatsapp.app_secret' => null,
             'services.whatsapp.public_app_url' => 'https://staging.fifiandkiki.com',
-            'services.whatsapp.access_card_delay_seconds' => 45,
             'app.url' => 'http://wedding.test',
         ]);
     }
@@ -86,7 +85,7 @@ class WhatsappAccessCardSendTest extends TestCase
         Bus::assertDispatchedAfterResponse(SendWhatsappReminderJob::class);
     }
 
-    public function test_reminder_job_sends_template_and_queues_access_card(): void
+    public function test_reminder_job_sends_template_without_queuing_access_card(): void
     {
         Bus::fake();
 
@@ -120,9 +119,7 @@ class WhatsappAccessCardSendTest extends TestCase
         $this->assertNotNull($guest->whatsapp_reminder_sent_at);
         $this->assertNull($guest->whatsapp_reminder_error);
 
-        Bus::assertDispatched(SendAccessCardWhatsappJob::class, function (SendAccessCardWhatsappJob $job) use ($guest): bool {
-            return $job->guest->is($guest);
-        });
+        Bus::assertNotDispatched(SendAccessCardWhatsappJob::class);
     }
 
     public function test_access_card_job_skips_when_reminder_not_sent(): void

@@ -18,7 +18,8 @@ class SendWhatsappBulkRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'action' => ['required', Rule::in(['selected', 'all_pending', 'all_failed', 'all_approved'])],
+            'phase' => ['required', Rule::in(['reminder', 'access_card'])],
+            'action' => ['required', Rule::in(['selected', 'all_pending', 'all_failed', 'all_ready', 'all_approved'])],
             'guest_ids' => ['nullable', 'array'],
             'guest_ids.*' => ['integer', 'exists:guests,id'],
         ];
@@ -30,8 +31,8 @@ class SendWhatsappBulkRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'phase.required' => 'Choose reminder or access card.',
             'action.required' => 'Choose a send action.',
-            'action.in' => 'Invalid send action.',
         ];
     }
 }

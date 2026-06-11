@@ -35,7 +35,7 @@ class WhatsappAdminTest extends TestCase
             ->assertSee('Recipient is not a valid WhatsApp user', false);
     }
 
-    public function test_bulk_send_queues_reminder_job_for_failed_guests(): void
+    public function test_bulk_send_queues_access_card_job_for_failed_cards(): void
     {
         Bus::fake();
 
@@ -68,6 +68,7 @@ class WhatsappAdminTest extends TestCase
 
         $this->actingAs($user)
             ->post(route('admin.whatsapp.send'), [
+                'phase' => 'access_card',
                 'action' => 'all_failed',
             ])
             ->assertRedirect(route('admin.whatsapp.index'));
@@ -99,12 +100,46 @@ class WhatsappAdminTest extends TestCase
 
         $this->actingAs($user)
             ->post(route('admin.whatsapp.send'), [
+                'phase' => 'reminder',
                 'action' => 'all_pending',
             ])
             ->assertRedirect(route('admin.whatsapp.index'));
 
         Bus::assertDispatched(SendWhatsappReminderJob::class, function (SendWhatsappReminderJob $job) use ($guest): bool {
             return $job->guest->is($guest);
+        });
+    }
+
+    public function test_bulk_send_access_cards_for_ready_guests(): void
+    {
+        Bus::fake();
+
+        $user = User::factory()->create();
+
+        config([
+            'services.whatsapp.access_token' => 'TEST_TOKEN',
+            'services.whatsapp.phone_number_id' => '1234567890',
+            'services.whatsapp.template_name' => 'wedding_access_card',
+            'services.whatsapp.reminder_template_name' => 'wedding_access_reminder',
+        ]);
+
+        $readyGuest = Guest::query()->create([
+            'name' => 'Ready Guest',
+            'phone' => '+1 (984) 658-1828',
+            'is_approved' => true,
+            'qr_code' => 'https://example.com/verify',
+            'whatsapp_reminder_sent_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('admin.whatsapp.send'), [
+                'phase' => 'access_card',
+                'action' => 'all_ready',
+            ])
+            ->assertRedirect(route('admin.whatsapp.index'));
+
+        Bus::assertDispatched(SendAccessCardWhatsappJob::class, function (SendAccessCardWhatsappJob $job) use ($readyGuest): bool {
+            return $job->guest->is($readyGuest);
         });
     }
 }

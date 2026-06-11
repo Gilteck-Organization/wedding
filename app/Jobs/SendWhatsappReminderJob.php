@@ -61,7 +61,7 @@ class SendWhatsappReminderJob implements ShouldQueue
         }
 
         if (! $this->force && $guest->whatsapp_reminder_sent_at !== null) {
-            $this->queueAccessCardIfNeeded($guest);
+            Log::info('WhatsApp reminder skipped: already sent.', ['guest_id' => $guest->id]);
 
             return;
         }
@@ -111,8 +111,6 @@ class SendWhatsappReminderJob implements ShouldQueue
             'to' => $to,
             'guest' => $guest->name,
         ]);
-
-        $this->queueAccessCard($guest);
     }
 
     public function failed(Throwable $exception): void
@@ -126,23 +124,6 @@ class SendWhatsappReminderJob implements ShouldQueue
         $guest->forceFill([
             'whatsapp_reminder_error' => mb_substr($exception->getMessage(), 0, 1000),
         ])->save();
-    }
-
-    private function queueAccessCardIfNeeded(Guest $guest): void
-    {
-        if ($guest->whatsapp_message_id !== null && $guest->whatsapp_status !== 'failed') {
-            return;
-        }
-
-        $this->queueAccessCard($guest);
-    }
-
-    private function queueAccessCard(Guest $guest): void
-    {
-        $delaySeconds = max(0, (int) config('services.whatsapp.access_card_delay_seconds', 45));
-
-        SendAccessCardWhatsappJob::dispatch($guest, force: $this->force)
-            ->delay(now()->addSeconds($delaySeconds));
     }
 
     private function recordFailure(Guest $guest, WhatsappException $e): void

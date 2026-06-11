@@ -45,7 +45,7 @@ class RsvpAdminController extends Controller
 
             return redirect()
                 ->route('admin.rsvps.index')
-                ->with('success', 'Guest approved. Reminder and access card are being sent via WhatsApp.');
+                ->with('success', 'Guest approved. Welcome reminder is being sent via WhatsApp. Send access cards later from Admin → WhatsApp.');
         }
 
         return redirect()
@@ -91,7 +91,7 @@ class RsvpAdminController extends Controller
         $message = $approved.' guest'.($approved === 1 ? '' : 's').' approved.';
 
         if ($whatsappConfigured) {
-            $message .= ' Reminder and access card messages are being queued via WhatsApp.';
+            $message .= ' Welcome reminders are being queued via WhatsApp. Send access cards later from Admin → WhatsApp.';
         }
 
         return redirect()
@@ -119,7 +119,7 @@ class RsvpAdminController extends Controller
 
         return redirect()
             ->route('admin.rsvps.index')
-            ->with('success', 'Resending WhatsApp reminder and access card to '.$guest->name.'.');
+            ->with('success', 'Resending WhatsApp welcome reminder to '.$guest->name.'.');
     }
 
     public function revokeAttendance(Rsvp $rsvp): RedirectResponse
