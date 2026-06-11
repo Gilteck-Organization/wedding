@@ -35,9 +35,9 @@ return [
         'name_top_percent' => 58,
         'name_left_percent' => 50,
         'name_max_width_percent' => 88,
-        'name_font_size_percent' => 1.85,
-        'party_font_size_percent' => 1.55,
-        'line_gap_px' => 3,
+        'name_font_size_percent' => 2.05,
+        'party_font_size_percent' => 1.75,
+        'line_gap_px' => 2,
         'qr_render_size' => 400,
     ],
 

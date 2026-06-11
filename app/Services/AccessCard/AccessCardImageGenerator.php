@@ -99,7 +99,7 @@ class AccessCardImageGenerator
             (string) $guest->qr_code,
             (string) $guest->latestRsvp?->guest_count,
             json_encode(config('wedding.access_card_image')),
-            'v4',
+            'v5',
         ]));
     }
 
