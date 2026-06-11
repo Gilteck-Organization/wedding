@@ -42,8 +42,12 @@ return [
         'app_secret' => env('WHATSAPP_APP_SECRET'),
         'verify_token' => env('WHATSAPP_VERIFY_TOKEN'),
         'template_name' => env('WHATSAPP_TEMPLATE_NAME'),
+        'reminder_template_name' => env('WHATSAPP_REMINDER_TEMPLATE_NAME'),
+        'access_card_delay_seconds' => (int) env('WHATSAPP_ACCESS_CARD_DELAY_SECONDS', 45),
         'template_language' => env('WHATSAPP_TEMPLATE_LANGUAGE', 'en'),
         'template_body_param_name' => env('WHATSAPP_TEMPLATE_BODY_PARAM_NAME', 'n'),
+        'template_url_button' => env('WHATSAPP_TEMPLATE_URL_BUTTON', true),
+        'template_url_button_index' => (int) env('WHATSAPP_TEMPLATE_URL_BUTTON_INDEX', 0),
         'graph_version' => env('WHATSAPP_GRAPH_VERSION', 'v21.0'),
         /*
          * Public HTTPS origin for per-guest access card images in WhatsApp headers.

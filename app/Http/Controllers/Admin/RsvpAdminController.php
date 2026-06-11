@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Jobs\SendAccessCardWhatsappJob;
+use App\Jobs\SendWhatsappReminderJob;
 use App\Models\Guest;
 use App\Models\Rsvp;
 use App\Services\Whatsapp\WhatsappSendGuard;
@@ -63,17 +63,17 @@ class RsvpAdminController extends Controller
             return $guest;
         });
 
-        if (WhatsappSendGuard::isReadyToSend()) {
-            SendAccessCardWhatsappJob::dispatch($guest)->afterCommit();
+        if (WhatsappSendGuard::isConfigured()) {
+            SendWhatsappReminderJob::dispatch($guest)->afterCommit();
 
             return redirect()
                 ->route('admin.rsvps.index')
-                ->with('success', 'Guest approved. Access card is being sent via WhatsApp.');
+                ->with('success', 'Guest approved. Reminder and access card are being sent via WhatsApp.');
         }
 
         return redirect()
             ->route('admin.rsvps.index')
-            ->with('success', 'Guest approved. WhatsApp is not configured (set WHATSAPP_PUBLIC_APP_URL on staging/production).');
+            ->with('success', 'Guest approved. WhatsApp is not configured — send from Admin → WhatsApp when ready.');
     }
 
     public function resendWhatsapp(Rsvp $rsvp): RedirectResponse
@@ -86,17 +86,17 @@ class RsvpAdminController extends Controller
                 ->with('success', 'Guest must be approved before re-sending the access card.');
         }
 
-        if (! WhatsappSendGuard::isReadyToSend()) {
+        if (! WhatsappSendGuard::isConfigured()) {
             return redirect()
                 ->route('admin.rsvps.index')
-                ->with('success', 'Set WHATSAPP_PUBLIC_APP_URL on staging/production before resending WhatsApp.');
+                ->with('success', 'WhatsApp is not configured. Set credentials in your environment first.');
         }
 
-        SendAccessCardWhatsappJob::dispatch($guest, force: true);
+        SendWhatsappReminderJob::dispatch($guest, force: true);
 
         return redirect()
             ->route('admin.rsvps.index')
-            ->with('success', 'Resending WhatsApp access card to '.$guest->name.'.');
+            ->with('success', 'Resending WhatsApp reminder and access card to '.$guest->name.'.');
     }
 
     public function revokeAttendance(Rsvp $rsvp): RedirectResponse

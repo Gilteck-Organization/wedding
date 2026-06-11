@@ -36,6 +36,7 @@ return [
         'name_left_percent' => 50,
         'name_font_size_percent' => 3.4,
         'party_font_size_percent' => 2.9,
+        'qr_render_size' => 400,
     ],
 
     /*

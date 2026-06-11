@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\AccessNameController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminProfileController;
 use App\Http\Controllers\Admin\RsvpAdminController;
+use App\Http\Controllers\Admin\WhatsappAdminController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Webhook\WhatsappWebhookController;
 use App\Http\Controllers\Wedding\RsvpController;
@@ -55,6 +56,9 @@ Route::middleware('auth')->prefix('admin')->group(function (): void {
     Route::post('/rsvps/{rsvp}/revoke-attendance', [RsvpAdminController::class, 'revokeAttendance'])->name('admin.rsvps.revoke-attendance');
     Route::post('/rsvps/{rsvp}/resend-whatsapp', [RsvpAdminController::class, 'resendWhatsapp'])->name('admin.rsvps.resend-whatsapp');
     Route::get('/rsvps/export.csv', [RsvpAdminController::class, 'exportCsv'])->name('admin.rsvps.export.csv');
+
+    Route::get('/whatsapp', [WhatsappAdminController::class, 'index'])->name('admin.whatsapp.index');
+    Route::post('/whatsapp/send', [WhatsappAdminController::class, 'send'])->name('admin.whatsapp.send');
 
     Route::get('/access-names', [AccessNameController::class, 'index'])->name('admin.access-names.index');
     Route::post('/access-names', [AccessNameController::class, 'store'])->name('admin.access-names.store');

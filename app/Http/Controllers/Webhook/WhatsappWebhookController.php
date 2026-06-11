@@ -112,17 +112,38 @@ class WhatsappWebhookController extends Controller
             return;
         }
 
-        $guest = Guest::query()->where('whatsapp_message_id', $wamid)->first();
+        $guest = Guest::query()
+            ->where('whatsapp_message_id', $wamid)
+            ->orWhere('whatsapp_reminder_message_id', $wamid)
+            ->first();
 
         if ($guest === null) {
             return;
         }
 
+        $isReminder = $guest->whatsapp_reminder_message_id === $wamid;
+
         $statusAt = is_numeric($timestamp)
             ? Carbon::createFromTimestamp((int) $timestamp)
             : Carbon::now();
 
-        if ($guest->whatsapp_status_at !== null && $guest->whatsapp_status_at->greaterThan($statusAt)) {
+        if ($guest->whatsapp_status_at !== null && ! $isReminder && $guest->whatsapp_status_at->greaterThan($statusAt)) {
+            return;
+        }
+
+        if ($isReminder) {
+            if ($state === 'failed') {
+                $errors = $status['errors'] ?? [];
+                $first = is_array($errors) && isset($errors[0]) ? $errors[0] : null;
+                $message = is_array($first)
+                    ? ($first['error_data']['details'] ?? $first['title'] ?? $first['message'] ?? 'Unknown error')
+                    : 'Unknown error';
+
+                $guest->forceFill([
+                    'whatsapp_reminder_error' => mb_substr((string) $message, 0, 1000),
+                ])->save();
+            }
+
             return;
         }
 

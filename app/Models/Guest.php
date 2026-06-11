@@ -29,6 +29,9 @@ class Guest extends Model
         'whatsapp_last_sent_at',
         'whatsapp_attempts',
         'whatsapp_error',
+        'whatsapp_reminder_message_id',
+        'whatsapp_reminder_sent_at',
+        'whatsapp_reminder_error',
     ];
 
     protected function casts(): array
@@ -37,6 +40,7 @@ class Guest extends Model
             'is_approved' => 'boolean',
             'whatsapp_status_at' => 'datetime',
             'whatsapp_last_sent_at' => 'datetime',
+            'whatsapp_reminder_sent_at' => 'datetime',
             'whatsapp_attempts' => 'integer',
         ];
     }

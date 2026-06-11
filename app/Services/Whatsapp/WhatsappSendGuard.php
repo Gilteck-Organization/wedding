@@ -20,49 +20,16 @@ class WhatsappSendGuard
         if ((string) config('services.whatsapp.template_name') === '') {
             throw new WhatsappException('WHATSAPP_TEMPLATE_NAME is not set.');
         }
-    }
 
-    /**
-     * Credentials plus a public HTTPS URL Meta can use to fetch each guest's access card image.
-     *
-     * @throws WhatsappException
-     */
-    public static function assertReadyToSend(): void
-    {
-        self::assertConfigured();
-
-        $publicAppUrl = config('services.whatsapp.public_app_url');
-
-        if (! is_string($publicAppUrl) || $publicAppUrl === '') {
-            throw new WhatsappException(
-                'WHATSAPP_PUBLIC_APP_URL is not set. Set it to your staging or production URL '
-                .'(e.g. https://staging.fifiandkiki.com) so Meta can fetch each guest\'s access card image.'
-            );
-        }
-
-        if (! str_starts_with($publicAppUrl, 'https://')) {
-            throw new WhatsappException(
-                'WHATSAPP_PUBLIC_APP_URL must be HTTPS. Current: '.$publicAppUrl
-            );
-        }
-
-        $host = parse_url($publicAppUrl, PHP_URL_HOST);
-
-        if (! is_string($host) || $host === '') {
-            throw new WhatsappException('WHATSAPP_PUBLIC_APP_URL is invalid: '.$publicAppUrl);
-        }
-
-        if (str_ends_with($host, '.test') || in_array($host, ['localhost', '127.0.0.1'], true)) {
-            throw new WhatsappException(
-                'WHATSAPP_PUBLIC_APP_URL must be a public staging or production host, not '.$host.'.'
-            );
+        if ((string) config('services.whatsapp.reminder_template_name') === '') {
+            throw new WhatsappException('WHATSAPP_REMINDER_TEMPLATE_NAME is not set.');
         }
     }
 
-    public static function isReadyToSend(): bool
+    public static function isConfigured(): bool
     {
         try {
-            self::assertReadyToSend();
+            self::assertConfigured();
         } catch (WhatsappException) {
             return false;
         }

@@ -14,6 +14,10 @@
                     class="{{ request()->routeIs('admin.rsvps.*') ? 'text-[#946112]' : 'text-[#2c2418]/80 hover:text-[#946112]' }}">
                     RSVPs
                 </a>
+                <a href="{{ route('admin.whatsapp.index') }}"
+                    class="{{ request()->routeIs('admin.whatsapp.*') ? 'text-[#946112]' : 'text-[#2c2418]/80 hover:text-[#946112]' }}">
+                    WhatsApp
+                </a>
                 <a href="{{ route('admin.access-names.index') }}"
                     class="{{ request()->routeIs('admin.access-names.*') ? 'text-[#946112]' : 'text-[#2c2418]/80 hover:text-[#946112]' }}">
                     Access names

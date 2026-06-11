@@ -19,7 +19,7 @@ class WhatsappTest extends Command
         {--name=Test Guest : Override guest name in the template body}
         {--guest= : Approved guest access token (defaults to guest with this phone)}';
 
-    protected $description = 'Send the approved WhatsApp template with that guest\'s access card image URL';
+    protected $description = 'Send the approved WhatsApp template with that guest\'s personalised access card image';
 
     public function handle(WhatsappClient $client, AccessCardImageGenerator $imageGenerator): int
     {
@@ -36,11 +36,11 @@ class WhatsappTest extends Command
         $language = (string) config('services.whatsapp.template_language', 'en');
 
         try {
-            WhatsappSendGuard::assertReadyToSend();
+            WhatsappSendGuard::assertConfigured();
             $guest = $this->resolveGuest($to);
-            $imageGenerator->ensureCached($guest);
-            $headerImageUrl = $imageGenerator->publicUrl($guest);
-            $components = WhatsappTemplateComponents::forAccessCard($guest, $headerImageUrl);
+            $imagePath = $imageGenerator->ensureCached($guest);
+            $headerMediaId = $client->uploadImage($imagePath);
+            $components = WhatsappTemplateComponents::forAccessCardWithMediaId($guest, $headerMediaId);
         } catch (WhatsappException|RuntimeException $e) {
             $this->error($e->getMessage());
 
@@ -50,7 +50,7 @@ class WhatsappTest extends Command
         $this->line('Guest: '.$guest->name.' (token: '.$guest->access_token.')');
         $this->line('Sending to '.$to.' using template '.$templateName.' ('.$language.')...');
         $this->line('Phone number ID: '.config('services.whatsapp.phone_number_id'));
-        $this->line('Header image: '.$headerImageUrl);
+        $this->line('Header media id: '.$headerMediaId);
 
         try {
             $response = $client->sendTemplate($to, $templateName, $language, $components);

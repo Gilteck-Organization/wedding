@@ -17,6 +17,7 @@ class WhatsappDiagnose extends Command
         $phoneNumberId = (string) config('services.whatsapp.phone_number_id');
         $wabaId = (string) config('services.whatsapp.business_account_id');
         $templateName = (string) config('services.whatsapp.template_name');
+        $reminderTemplateName = (string) config('services.whatsapp.reminder_template_name');
         $version = (string) config('services.whatsapp.graph_version', 'v21.0');
 
         if ($token === '') {
@@ -76,6 +77,20 @@ class WhatsappDiagnose extends Command
         }
         $this->line('  Phone number ID OK: '.($phone['display_phone_number'] ?? $phoneNumberId));
 
+        if ($reminderTemplateName !== '' && $wabaId !== '') {
+            $templates = Http::withToken($token)
+                ->get("https://graph.facebook.com/{$version}/{$wabaId}/message_templates", [
+                    'name' => $reminderTemplateName,
+                ])
+                ->json();
+            $template = $templates['data'][0] ?? null;
+            if ($template === null) {
+                $this->warn("  Reminder template '{$reminderTemplateName}' not found on WABA.");
+            } else {
+                $this->line('  Reminder template OK: '.$reminderTemplateName.' ('.($template['status'] ?? '?').')');
+            }
+        }
+
         if ($templateName !== '' && $wabaId !== '') {
             $templates = Http::withToken($token)
                 ->get("https://graph.facebook.com/{$version}/{$wabaId}/message_templates", [
@@ -86,7 +101,7 @@ class WhatsappDiagnose extends Command
             if ($template === null) {
                 $this->warn("  Template '{$templateName}' not found on WABA.");
             } else {
-                $this->line('  Template OK: '.$templateName.' ('.($template['status'] ?? '?').')');
+                $this->line('  Access card template OK: '.$templateName.' ('.($template['status'] ?? '?').')');
                 $this->line('  Body param format: '.($template['parameter_format'] ?? 'POSITIONAL'));
             }
         }
@@ -107,6 +122,7 @@ class WhatsappDiagnose extends Command
             return self::FAILURE;
         } else {
             $this->line('  Access card image base URL: '.$publicAppUrl.'/access-card/{token}/image.jpg');
+            $this->line('  Access card button URL: '.$publicAppUrl.'/access-card/{token}');
         }
 
         $this->newLine();

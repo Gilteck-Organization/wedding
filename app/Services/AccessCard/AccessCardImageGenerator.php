@@ -11,8 +11,7 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
 class AccessCardImageGenerator
 {
     /**
-     * Public URL Meta fetches for this guest's personalised access card image.
-     * Built from WHATSAPP_PUBLIC_APP_URL + /access-card/{token}/image.jpg
+     * Public URL Meta can fetch for this guest's personalised access card image.
      */
     public function publicUrl(Guest $guest): string
     {
@@ -20,11 +19,17 @@ class AccessCardImageGenerator
 
         if (! is_string($root) || $root === '') {
             throw new RuntimeException(
-                'WHATSAPP_PUBLIC_APP_URL is not set. WhatsApp sends are disabled on this environment.'
+                'WHATSAPP_PUBLIC_APP_URL is not set. Set your staging or production URL.'
             );
         }
 
         return rtrim($root, '/').'/access-card/'.$guest->access_token.'/image.jpg';
+    }
+
+    public function clearCache(Guest $guest): void
+    {
+        $path = $this->cachePath($guest);
+        Storage::disk('local')->delete([$path, $path.'.meta']);
     }
 
     /**
@@ -94,6 +99,7 @@ class AccessCardImageGenerator
             (string) $guest->qr_code,
             (string) $guest->latestRsvp?->guest_count,
             json_encode(config('wedding.access_card_image')),
+            'v2',
         ]));
     }
 
@@ -145,33 +151,21 @@ class AccessCardImageGenerator
         $nameSize = (int) round($width * ((float) ($layout['name_font_size_percent'] ?? 3.4) / 100));
         $partySize = (int) round($width * ((float) ($layout['party_font_size_percent'] ?? 2.9) / 100));
 
-        $textColor = imagecolorallocate($base, 58, 44, 23);
-
-        $this->drawCenteredText(
-            $base,
-            $this->fontPath('bold'),
-            $nameSize,
-            $textColor,
-            $centerX,
-            $topY + $nameSize,
-            'Guest: '.$guest->name,
-        );
-
+        $guestLine = 'Guest: '.$guest->name;
         $partyLine = $this->partyLine($guest);
 
-        if ($partyLine === null) {
-            return;
-        }
+        $this->drawShadowedCenteredText($base, $this->fontPath('bold'), $nameSize, $centerX, $topY, $guestLine);
 
-        $this->drawCenteredText(
-            $base,
-            $this->fontPath('regular'),
-            $partySize,
-            $textColor,
-            $centerX,
-            $topY + $nameSize + $partySize + (int) round($width * 0.012),
-            $partyLine,
-        );
+        if ($partyLine !== null) {
+            $this->drawShadowedCenteredText(
+                $base,
+                $this->fontPath('regular'),
+                $partySize,
+                $centerX,
+                $topY + $nameSize + (int) round($width * 0.02),
+                $partyLine,
+            );
+        }
     }
 
     private function partyLine(Guest $guest): ?string
@@ -190,20 +184,41 @@ class AccessCardImageGenerator
         return null;
     }
 
-    private function drawCenteredText(
+    private function drawShadowedCenteredText(
         GdImage $image,
         string $fontPath,
         int $fontSize,
-        int $color,
         int $centerX,
-        int $baselineY,
+        int $topY,
         string $text,
     ): void {
-        $box = imagettfbbox($fontSize, 0, $fontPath, $text);
-        $textWidth = abs($box[2] - $box[0]);
-        $x = $centerX - (int) round($textWidth / 2);
+        if (! function_exists('imagettftext')) {
+            throw new RuntimeException('PHP FreeType support is required to render guest names on access cards.');
+        }
 
-        imagettftext($image, $fontSize, 0, $x, $baselineY, $color, $fontPath, $text);
+        $box = imagettfbbox($fontSize, 0, $fontPath, $text);
+
+        if ($box === false) {
+            throw new RuntimeException('Could not measure access card text: '.$text);
+        }
+
+        $textWidth = abs($box[2] - $box[0]);
+        $textHeight = abs($box[7] - $box[1]);
+        $x = $centerX - (int) round($textWidth / 2);
+        $baselineY = $topY + $textHeight;
+
+        $shadow = imagecolorallocatealpha($image, 250, 246, 238, 20);
+        $textColor = imagecolorallocate($image, 58, 44, 23);
+
+        foreach ([[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, 1]] as [$ox, $oy]) {
+            imagettftext($image, $fontSize, 0, $x + $ox, $baselineY + $oy, $shadow, $fontPath, $text);
+        }
+
+        $result = imagettftext($image, $fontSize, 0, $x, $baselineY, $textColor, $fontPath, $text);
+
+        if ($result === false) {
+            throw new RuntimeException('Failed to draw access card text: '.$text);
+        }
     }
 
     private function fontPath(string $weight): string

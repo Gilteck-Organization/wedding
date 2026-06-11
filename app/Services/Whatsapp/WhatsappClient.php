@@ -60,6 +60,59 @@ class WhatsappClient
     }
 
     /**
+     * Upload a JPEG access card to Meta. Returns a media id for template header parameters.
+     *
+     * @throws WhatsappException
+     */
+    public function uploadImage(string $absolutePath): string
+    {
+        if (! is_file($absolutePath)) {
+            throw new WhatsappException('Access card image file not found: '.$absolutePath);
+        }
+
+        $token = (string) config('services.whatsapp.access_token');
+
+        try {
+            $response = Http::withToken($token)
+                ->attach(
+                    'file',
+                    fopen($absolutePath, 'r'),
+                    basename($absolutePath),
+                    ['Content-Type' => 'image/jpeg'],
+                )
+                ->post($this->endpoint('media'), [
+                    'messaging_product' => 'whatsapp',
+                    'type' => 'image/jpeg',
+                ])
+                ->throw();
+        } catch (RequestException $e) {
+            $errorBody = $e->response->json();
+            $status = $e->response->status();
+
+            Log::warning('WhatsApp media upload failed.', [
+                'path' => $absolutePath,
+                'status' => $status,
+                'error' => $errorBody,
+            ]);
+
+            throw new WhatsappException(
+                $this->extractMessage($errorBody) ?? 'WhatsApp media upload failed.',
+                is_array($errorBody) ? $errorBody : null,
+                $status,
+                $e,
+            );
+        }
+
+        $mediaId = $response->json('id');
+
+        if (! is_string($mediaId) || $mediaId === '') {
+            throw new WhatsappException('WhatsApp media upload did not return a media id.');
+        }
+
+        return $mediaId;
+    }
+
+    /**
      * Extract the `wamid` (WhatsApp message id) from a send response.
      */
     public function extractMessageId(array $sendResponse): ?string

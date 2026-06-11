@@ -6,6 +6,7 @@ use App\Models\AccessName;
 use App\Models\Guest;
 use App\Models\Rsvp;
 use App\Models\User;
+use App\Services\AccessCard\AccessCardImageGenerator;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -61,6 +62,20 @@ class AccessCardTest extends TestCase
 
         $response->assertOk();
         $this->assertStringContainsString('image/jpeg', (string) $response->headers->get('Content-Type'));
+        $this->assertGreaterThan(50_000, strlen((string) $response->getContent()));
+    }
+
+    public function test_access_card_image_renderer_draws_guest_name_with_freetype(): void
+    {
+        if (! function_exists('imagettftext')) {
+            $this->markTestSkipped('FreeType is required to render guest names on access cards.');
+        }
+
+        $guest = $this->approvedGuestWithVerifyQr('Visible Name Guest');
+        $binary = app(AccessCardImageGenerator::class)->render($guest);
+
+        $this->assertStringStartsWith("\xFF\xD8", $binary);
+        $this->assertGreaterThan(50_000, strlen($binary));
     }
 
     public function test_access_card_image_returns_not_found_when_not_approved(): void

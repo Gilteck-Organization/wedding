@@ -75,6 +75,12 @@ class SendAccessCardWhatsappJob implements ShouldQueue
             return;
         }
 
+        if (! $this->force && $guest->whatsapp_reminder_sent_at === null) {
+            Log::info('WhatsApp access card skipped: reminder not sent yet.', ['guest_id' => $guest->id]);
+
+            return;
+        }
+
         $to = Phone::toWhatsapp($guest->phone);
 
         if ($to === null) {
@@ -96,10 +102,15 @@ class SendAccessCardWhatsappJob implements ShouldQueue
         }
 
         try {
-            WhatsappSendGuard::assertReadyToSend();
-            $imageGenerator->ensureCached($guest);
-            $headerImageUrl = $imageGenerator->publicUrl($guest);
-            $components = WhatsappTemplateComponents::forAccessCard($guest, $headerImageUrl);
+            WhatsappSendGuard::assertConfigured();
+
+            if ($this->force) {
+                $imageGenerator->clearCache($guest);
+            }
+
+            $imagePath = $imageGenerator->ensureCached($guest);
+            $headerMediaId = $client->uploadImage($imagePath);
+            $components = WhatsappTemplateComponents::forAccessCardWithMediaId($guest, $headerMediaId);
             $response = $client->sendTemplate($to, $templateName, $language, $components);
         } catch (WhatsappException $e) {
             $this->recordFailure($guest, $e);
@@ -130,7 +141,8 @@ class SendAccessCardWhatsappJob implements ShouldQueue
             'guest_id' => $guest->id,
             'wamid' => $messageId,
             'to' => $to,
-            'header_image' => $headerImageUrl,
+            'guest' => $guest->name,
+            'access_token' => $guest->access_token,
         ]);
     }
 
