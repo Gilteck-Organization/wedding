@@ -84,7 +84,7 @@ class RsvpAdminController extends Controller
             $approved++;
 
             if ($whatsappConfigured) {
-                SendWhatsappReminderJob::dispatch($guest)->afterCommit();
+                SendWhatsappReminderJob::dispatch($guest);
             }
         }
 

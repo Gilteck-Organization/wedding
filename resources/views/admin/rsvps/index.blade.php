@@ -28,18 +28,30 @@
             </div>
         @endif
 
-        {{-- No overflow-hidden / backdrop-blur / reveal on this card: they trap position:fixed dropdowns --}}
-        <form action="{{ route('admin.rsvps.bulk-approve') }}" method="POST" class="mt-6 space-y-4">
-            @csrf
+        @if ($errors->any())
+            <div class="mt-6 rounded-none border border-[#803b48]/30 bg-[#803b48]/10 px-4 py-3 text-sm text-[#803b48]">
+                <ul class="list-disc pl-5 space-y-1">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
+        {{-- Bulk approve: form id + form="" attribute so row action forms are not nested inside --}}
+        <form id="bulk-approve-form" action="{{ route('admin.rsvps.bulk-approve') }}" method="POST" class="hidden">
+            @csrf
+        </form>
+
+        <div class="mt-6 space-y-4">
             <div class="flex flex-wrap gap-3">
-                <button type="submit" name="action" value="all_pending"
+                <button type="submit" form="bulk-approve-form" name="action" value="all_pending"
                     class="btn-wired px-5 py-2.5 text-xs sm:text-sm"
                     @disabled(($pendingCount ?? 0) === 0)
-                    onclick="return confirm('Approve all {{ $pendingCount ?? 0 }} pending RSVPs? WhatsApp messages will be queued for each guest.')">
+                    onclick="return confirm('Approve all {{ $pendingCount ?? 0 }} pending RSVPs? Welcome reminders will be queued for each guest.')">
                     <span class="btn-wired__text">Approve all pending ({{ $pendingCount ?? 0 }})</span>
                 </button>
-                <button type="submit" name="action" value="selected"
+                <button type="submit" form="bulk-approve-form" name="action" value="selected"
                     class="inline-flex items-center justify-center rounded-none px-5 py-2.5 text-xs font-semibold text-[#2c2418] border border-[#946112]/40 bg-white/70 shadow-sm hover:-translate-y-0.5 transition-all disabled:opacity-50"
                     onclick="return confirm('Approve selected RSVPs?')">
                     Approve selected
@@ -72,7 +84,7 @@
                             <tr class="border-t border-[#946112]/10">
                                 <td class="px-4 py-3">
                                     @unless ($isApproved)
-                                        <input type="checkbox" name="rsvp_ids[]" value="{{ $rsvp->id }}"
+                                        <input type="checkbox" form="bulk-approve-form" name="rsvp_ids[]" value="{{ $rsvp->id }}"
                                             class="rsvp-select-checkbox rounded border-[#946112]/40 text-[#946112] focus:ring-[#946112]/30">
                                     @endunless
                                 </td>
@@ -193,7 +205,7 @@
                 {{ $rsvps->links() }}
             </div>
         </div>
-        </form>
+        </div>
     </div>
 
     <script>

@@ -40,7 +40,7 @@ class AdminAuthTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Venue capacity', false);
-        $response->assertSee('350', false);
+        $response->assertSee('400', false);
     }
 
     public function test_user_can_log_in_with_valid_credentials(): void

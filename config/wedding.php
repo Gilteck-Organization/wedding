@@ -44,6 +44,6 @@ return [
     /*
     | Total venue capacity (seats / guests) for the celebration. Used on the admin dashboard.
     */
-    'venue_capacity' => (int) env('WEDDING_VENUE_CAPACITY', 350),
+    'venue_capacity' => (int) env('WEDDING_VENUE_CAPACITY', 400),
 
 ];
