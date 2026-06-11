@@ -312,8 +312,8 @@
 
     .access-card-stage__guest-line {
         width: 100%;
-        font-size: 0.65rem;
-        line-height: 1.25;
+        font-size: 0.58rem;
+        line-height: 1.15;
         overflow-wrap: anywhere;
         word-break: break-word;
         hyphens: auto;
@@ -322,8 +322,8 @@
 
     .access-card-stage__party-line {
         width: 100%;
-        font-size: 0.58rem;
-        line-height: 1.2;
+        font-size: 0.52rem;
+        line-height: 1.15;
         overflow-wrap: anywhere;
         word-break: break-word;
         text-wrap: balance;

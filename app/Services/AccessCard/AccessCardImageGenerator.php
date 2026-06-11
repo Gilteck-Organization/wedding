@@ -99,7 +99,7 @@ class AccessCardImageGenerator
             (string) $guest->qr_code,
             (string) $guest->latestRsvp?->guest_count,
             json_encode(config('wedding.access_card_image')),
-            'v3',
+            'v4',
         ]));
     }
 
@@ -155,31 +155,57 @@ class AccessCardImageGenerator
         $partyLine = $this->partyLine($guest);
 
         $maxWidth = (int) round($width * ((float) ($layout['name_max_width_percent'] ?? 88) / 100));
-        $lineHeight = (int) round($width * ((float) ($layout['line_height_percent'] ?? 3.2) / 100));
+        $lineGap = (int) ($layout['line_gap_px'] ?? 3);
 
-        $linesDrawn = $this->drawShadowedWrappedCenteredText(
+        $this->drawShadowedWrappedCenteredText(
             $base,
             $this->fontPath('bold'),
             $nameSize,
             $centerX,
             $topY,
             $maxWidth,
-            $lineHeight,
+            $lineGap,
             $guestLine,
         );
 
         if ($partyLine !== null) {
+            $partyGap = max($lineGap, (int) round($width * 0.008));
+
             $this->drawShadowedWrappedCenteredText(
                 $base,
                 $this->fontPath('regular'),
                 $partySize,
                 $centerX,
-                $topY + ($linesDrawn * $lineHeight) + (int) round($width * 0.01),
+                $topY + $this->wrappedTextHeight($nameSize, $this->fontPath('bold'), $guestLine, $maxWidth, $lineGap) + $partyGap,
                 $maxWidth,
-                $lineHeight,
+                $lineGap,
                 $partyLine,
             );
         }
+    }
+
+    private function wrappedTextHeight(
+        int $fontSize,
+        string $fontPath,
+        string $text,
+        int $maxWidth,
+        int $lineGap,
+    ): int {
+        $lines = $this->wrapText($text, $fontPath, $fontSize, $maxWidth);
+
+        if ($lines === []) {
+            return 0;
+        }
+
+        $box = imagettfbbox($fontSize, 0, $fontPath, $lines[0]);
+
+        if ($box === false) {
+            return $fontSize;
+        }
+
+        $lineHeight = abs($box[7] - $box[1]);
+
+        return ($lineHeight * count($lines)) + ($lineGap * max(0, count($lines) - 1));
     }
 
     private function partyLine(Guest $guest): ?string
@@ -205,7 +231,7 @@ class AccessCardImageGenerator
         int $centerX,
         int $topY,
         int $maxWidth,
-        int $lineHeight,
+        int $lineGap,
         string $text,
     ): int {
         if (! function_exists('imagettftext')) {
@@ -215,8 +241,9 @@ class AccessCardImageGenerator
         $lines = $this->wrapText($text, $fontPath, $fontSize, $maxWidth);
         $shadow = imagecolorallocatealpha($image, 250, 246, 238, 20);
         $textColor = imagecolorallocate($image, 58, 44, 23);
+        $baselineY = $topY;
 
-        foreach ($lines as $index => $line) {
+        foreach ($lines as $line) {
             $box = imagettfbbox($fontSize, 0, $fontPath, $line);
 
             if ($box === false) {
@@ -224,9 +251,9 @@ class AccessCardImageGenerator
             }
 
             $textWidth = abs($box[2] - $box[0]);
-            $textHeight = abs($box[7] - $box[1]);
+            $lineHeight = abs($box[7] - $box[1]);
             $x = $centerX - (int) round($textWidth / 2);
-            $baselineY = $topY + $textHeight + ($index * $lineHeight);
+            $baselineY += $lineHeight;
 
             foreach ([[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, 1]] as [$ox, $oy]) {
                 imagettftext($image, $fontSize, 0, $x + $ox, $baselineY + $oy, $shadow, $fontPath, $line);
@@ -237,6 +264,8 @@ class AccessCardImageGenerator
             if ($result === false) {
                 throw new RuntimeException('Failed to draw access card text: '.$line);
             }
+
+            $baselineY += $lineGap;
         }
 
         return count($lines);
