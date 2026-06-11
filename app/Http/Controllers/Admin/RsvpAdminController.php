@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\ApproveRsvpsBulkRequest;
 use App\Jobs\SendWhatsappReminderJob;
 use App\Models\Guest;
 use App\Models\Rsvp;
 use App\Services\Whatsapp\WhatsappSendGuard;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
@@ -20,48 +22,23 @@ class RsvpAdminController extends Controller
             ->orderByDesc('created_at')
             ->paginate(20);
 
+        $pendingCount = Rsvp::query()
+            ->where(function (Builder $builder): void {
+                $builder
+                    ->whereDoesntHave('guest')
+                    ->orWhereHas('guest', fn (Builder $guestQuery): Builder => $guestQuery->where('is_approved', false));
+            })
+            ->count();
+
         return view('admin.rsvps.index', [
             'rsvps' => $rsvps,
+            'pendingCount' => $pendingCount,
         ]);
     }
 
     public function approve(Rsvp $rsvp): RedirectResponse
     {
-        $guest = DB::transaction(function () use ($rsvp): Guest {
-            $guest = $rsvp->guest;
-
-            if ($guest === null) {
-                $guest = Guest::create([
-                    'name' => $rsvp->name,
-                    'phone' => $rsvp->phone,
-                    'email' => null,
-                    'is_approved' => true,
-                ]);
-            } else {
-                $guest->is_approved = true;
-                $guest->save();
-            }
-
-            $guest->refresh();
-
-            $accessCardUrl = route('access-card.verify', $guest);
-
-            $guest->update([
-                'qr_code' => $accessCardUrl,
-                'is_approved' => true,
-            ]);
-
-            $rsvp->guest_id = $guest->id;
-
-            if ($rsvp->attendance === 'no') {
-                $rsvp->attendance = 'yes';
-                $rsvp->guest_count = $rsvp->guest_count ?? 1;
-            }
-
-            $rsvp->save();
-
-            return $guest;
-        });
+        $guest = $this->approveRsvp($rsvp);
 
         if (WhatsappSendGuard::isConfigured()) {
             SendWhatsappReminderJob::dispatch($guest)->afterCommit();
@@ -74,6 +51,52 @@ class RsvpAdminController extends Controller
         return redirect()
             ->route('admin.rsvps.index')
             ->with('success', 'Guest approved. WhatsApp is not configured — send from Admin → WhatsApp when ready.');
+    }
+
+    public function approveBulk(ApproveRsvpsBulkRequest $request): RedirectResponse
+    {
+        $action = (string) $request->validated('action');
+
+        $query = Rsvp::query()
+            ->where(function (Builder $builder): void {
+                $builder
+                    ->whereDoesntHave('guest')
+                    ->orWhereHas('guest', fn (Builder $guestQuery): Builder => $guestQuery->where('is_approved', false));
+            });
+
+        if ($action === 'selected') {
+            $query->whereIn('id', $request->validated('rsvp_ids', []));
+        }
+
+        $rsvps = $query->orderBy('id')->get();
+
+        if ($rsvps->isEmpty()) {
+            return redirect()
+                ->route('admin.rsvps.index')
+                ->with('success', 'No pending RSVPs matched that action.');
+        }
+
+        $approved = 0;
+        $whatsappConfigured = WhatsappSendGuard::isConfigured();
+
+        foreach ($rsvps as $rsvp) {
+            $guest = $this->approveRsvp($rsvp);
+            $approved++;
+
+            if ($whatsappConfigured) {
+                SendWhatsappReminderJob::dispatch($guest)->afterCommit();
+            }
+        }
+
+        $message = $approved.' guest'.($approved === 1 ? '' : 's').' approved.';
+
+        if ($whatsappConfigured) {
+            $message .= ' Reminder and access card messages are being queued via WhatsApp.';
+        }
+
+        return redirect()
+            ->route('admin.rsvps.index')
+            ->with('success', $message);
     }
 
     public function resendWhatsapp(Rsvp $rsvp): RedirectResponse
@@ -164,5 +187,44 @@ class RsvpAdminController extends Controller
                 'Content-Type' => 'text/csv; charset=UTF-8',
             ],
         );
+    }
+
+    private function approveRsvp(Rsvp $rsvp): Guest
+    {
+        return DB::transaction(function () use ($rsvp): Guest {
+            $guest = $rsvp->guest;
+
+            if ($guest === null) {
+                $guest = Guest::create([
+                    'name' => $rsvp->name,
+                    'phone' => $rsvp->phone,
+                    'email' => null,
+                    'is_approved' => true,
+                ]);
+            } else {
+                $guest->is_approved = true;
+                $guest->save();
+            }
+
+            $guest->refresh();
+
+            $accessCardUrl = route('access-card.verify', $guest);
+
+            $guest->update([
+                'qr_code' => $accessCardUrl,
+                'is_approved' => true,
+            ]);
+
+            $rsvp->guest_id = $guest->id;
+
+            if ($rsvp->attendance === 'no') {
+                $rsvp->attendance = 'yes';
+                $rsvp->guest_count = $rsvp->guest_count ?? 1;
+            }
+
+            $rsvp->save();
+
+            return $guest;
+        });
     }
 }

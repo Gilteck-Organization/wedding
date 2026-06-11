@@ -122,7 +122,8 @@ class WhatsappDiagnose extends Command
             return self::FAILURE;
         } else {
             $this->line('  Access card image base URL: '.$publicAppUrl.'/access-card/{token}/image.jpg');
-            $this->line('  Access card button URL: '.$publicAppUrl.'/access-card/{token}');
+            $this->line('  Access card button URL (full): '.$publicAppUrl.'/access-card/{token}');
+            $this->line('  Meta button template URL should be: {{1}} with sample '.$publicAppUrl.'/access-card/tizax');
         }
 
         $this->newLine();

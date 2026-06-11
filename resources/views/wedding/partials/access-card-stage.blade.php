@@ -17,19 +17,19 @@
             </div>
         </div>
 
-        <div class="access-card-stage__guest-details mt-4" aria-live="polite">
+        <div class="access-card-stage__guest-details" aria-live="polite">
             <p
-                class="font-serif text-sm leading-snug text-balance text-wedding-champagne [text-shadow:0_1px_0_rgba(255,250,240,0.85),0_0_12px_rgba(250,246,238,0.9)]">
+                class="access-card-stage__guest-line font-serif text-wedding-champagne [text-shadow:0_1px_0_rgba(255,250,240,0.85),0_0_12px_rgba(250,246,238,0.9)]">
                 Guest: <span class="font-bold">{{ $guest->name }}</span>
             </p>
             @if ($additionalGuests === 1)
                 <p
-                    class="mt-0.5 font-serif text-xs font-semibold leading-tight text-[#3a2c17] [text-shadow:0_1px_0_rgba(255,250,240,0.9),0_0_8px_rgba(250,246,238,0.85)]">
+                    class="access-card-stage__party-line font-serif font-semibold text-[#3a2c17] [text-shadow:0_1px_0_rgba(255,250,240,0.9),0_0_8px_rgba(250,246,238,0.85)]">
                     Plus one guest
                 </p>
             @elseif ($additionalGuests !== null && $additionalGuests > 1)
                 <p
-                    class="mt-0.5 font-serif text-xs font-medium text-[#5a3e13]/90 [text-shadow:0_1px_0_rgba(255,250,240,0.85),0_0_10px_rgba(250,246,238,0.85)]">
+                    class="access-card-stage__party-line font-serif font-medium text-[#5a3e13]/90 [text-shadow:0_1px_0_rgba(255,250,240,0.85),0_0_10px_rgba(250,246,238,0.85)]">
                     Plus {{ $additionalGuests }} guests
                 </p>
             @endif

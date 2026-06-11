@@ -48,6 +48,11 @@ return [
         'template_body_param_name' => env('WHATSAPP_TEMPLATE_BODY_PARAM_NAME', 'n'),
         'template_url_button' => env('WHATSAPP_TEMPLATE_URL_BUTTON', true),
         'template_url_button_index' => (int) env('WHATSAPP_TEMPLATE_URL_BUTTON_INDEX', 0),
+        /*
+         * full = send complete https URL in button {{1}} (recommended).
+         * token = send only the 5-letter access token (Meta URL must end with /access-card/{{1}}).
+         */
+        'template_button_url_mode' => env('WHATSAPP_TEMPLATE_BUTTON_URL_MODE', 'full'),
         'graph_version' => env('WHATSAPP_GRAPH_VERSION', 'v21.0'),
         /*
          * Public HTTPS origin for per-guest access card images in WhatsApp headers.

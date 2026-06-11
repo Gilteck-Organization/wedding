@@ -22,12 +22,38 @@
             </div>
         </div>
 
+        @if (session('success'))
+            <div class="mt-6 rounded-none border border-[#946112]/30 bg-[#946112]/10 px-4 py-3 text-sm text-[#2c2418]">
+                {{ session('success') }}
+            </div>
+        @endif
+
         {{-- No overflow-hidden / backdrop-blur / reveal on this card: they trap position:fixed dropdowns --}}
-        <div class="mt-6 rounded-none border border-[#946112]/20 bg-[#fffdf8]/95 shadow">
+        <form action="{{ route('admin.rsvps.bulk-approve') }}" method="POST" class="mt-6 space-y-4">
+            @csrf
+
+            <div class="flex flex-wrap gap-3">
+                <button type="submit" name="action" value="all_pending"
+                    class="btn-wired px-5 py-2.5 text-xs sm:text-sm"
+                    @disabled(($pendingCount ?? 0) === 0)
+                    onclick="return confirm('Approve all {{ $pendingCount ?? 0 }} pending RSVPs? WhatsApp messages will be queued for each guest.')">
+                    <span class="btn-wired__text">Approve all pending ({{ $pendingCount ?? 0 }})</span>
+                </button>
+                <button type="submit" name="action" value="selected"
+                    class="inline-flex items-center justify-center rounded-none px-5 py-2.5 text-xs font-semibold text-[#2c2418] border border-[#946112]/40 bg-white/70 shadow-sm hover:-translate-y-0.5 transition-all disabled:opacity-50"
+                    onclick="return confirm('Approve selected RSVPs?')">
+                    Approve selected
+                </button>
+            </div>
+
+        <div class="rounded-none border border-[#946112]/20 bg-[#fffdf8]/95 shadow">
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
                     <thead>
                         <tr class="bg-[#fffdf8]/90">
+                            <th class="text-left px-4 py-3 font-semibold text-[#2c2418]/80">
+                                <span class="sr-only">Select</span>
+                            </th>
                             <th class="text-left px-4 py-3 font-semibold text-[#2c2418]/80">Name</th>
                             <th class="text-left px-4 py-3 font-semibold text-[#2c2418]/80">Phone</th>
                             <th class="text-left px-4 py-3 font-semibold text-[#2c2418]/80">Attendance</th>
@@ -44,6 +70,12 @@
                                 $isApproved = (bool) ($rsvp->guest?->is_approved ?? false);
                             @endphp
                             <tr class="border-t border-[#946112]/10">
+                                <td class="px-4 py-3">
+                                    @unless ($isApproved)
+                                        <input type="checkbox" name="rsvp_ids[]" value="{{ $rsvp->id }}"
+                                            class="rsvp-select-checkbox rounded border-[#946112]/40 text-[#946112] focus:ring-[#946112]/30">
+                                    @endunless
+                                </td>
                                 <td class="px-4 py-3 font-medium text-[#2c2418]">{{ $rsvp->name }}</td>
                                 <td class="px-4 py-3 text-[#2c2418]">{{ $rsvp->phone }}</td>
                                 <td class="px-4 py-3 text-[#2c2418] font-semibold">{{ $rsvp->attendance === 'yes' ? 'Yes' : 'No' }}</td>
@@ -149,7 +181,7 @@
                             </tr>
                         @empty
                             <tr class="border-t border-[#946112]/10">
-                                <td class="px-4 py-8 text-center text-[#2c2418]/70" colspan="8">
+                                <td class="px-4 py-8 text-center text-[#2c2418]/70" colspan="9">
                                     No RSVPs yet.
                                 </td>
                             </tr>
@@ -161,6 +193,7 @@
                 {{ $rsvps->links() }}
             </div>
         </div>
+        </form>
     </div>
 
     <script>

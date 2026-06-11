@@ -52,6 +52,7 @@ Route::middleware('auth')->prefix('admin')->group(function (): void {
     Route::get('/profile', [AdminProfileController::class, 'edit'])->name('admin.profile.edit');
     Route::put('/profile', [AdminProfileController::class, 'update'])->name('admin.profile.update');
     Route::get('/rsvps', [RsvpAdminController::class, 'index'])->name('admin.rsvps.index');
+    Route::post('/rsvps/bulk-approve', [RsvpAdminController::class, 'approveBulk'])->name('admin.rsvps.bulk-approve');
     Route::post('/rsvps/{rsvp}/approve', [RsvpAdminController::class, 'approve'])->name('admin.rsvps.approve');
     Route::post('/rsvps/{rsvp}/revoke-attendance', [RsvpAdminController::class, 'revokeAttendance'])->name('admin.rsvps.revoke-attendance');
     Route::post('/rsvps/{rsvp}/resend-whatsapp', [RsvpAdminController::class, 'resendWhatsapp'])->name('admin.rsvps.resend-whatsapp');

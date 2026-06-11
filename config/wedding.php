@@ -34,8 +34,10 @@ return [
         'qr_size_percent' => 17.14,
         'name_top_percent' => 58,
         'name_left_percent' => 50,
-        'name_font_size_percent' => 3.4,
-        'party_font_size_percent' => 2.9,
+        'name_max_width_percent' => 88,
+        'name_font_size_percent' => 2.5,
+        'party_font_size_percent' => 2.1,
+        'line_height_percent' => 3.2,
         'qr_render_size' => 400,
     ],
 

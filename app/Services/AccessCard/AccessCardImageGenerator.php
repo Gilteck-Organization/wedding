@@ -99,7 +99,7 @@ class AccessCardImageGenerator
             (string) $guest->qr_code,
             (string) $guest->latestRsvp?->guest_count,
             json_encode(config('wedding.access_card_image')),
-            'v2',
+            'v3',
         ]));
     }
 
@@ -154,15 +154,29 @@ class AccessCardImageGenerator
         $guestLine = 'Guest: '.$guest->name;
         $partyLine = $this->partyLine($guest);
 
-        $this->drawShadowedCenteredText($base, $this->fontPath('bold'), $nameSize, $centerX, $topY, $guestLine);
+        $maxWidth = (int) round($width * ((float) ($layout['name_max_width_percent'] ?? 88) / 100));
+        $lineHeight = (int) round($width * ((float) ($layout['line_height_percent'] ?? 3.2) / 100));
+
+        $linesDrawn = $this->drawShadowedWrappedCenteredText(
+            $base,
+            $this->fontPath('bold'),
+            $nameSize,
+            $centerX,
+            $topY,
+            $maxWidth,
+            $lineHeight,
+            $guestLine,
+        );
 
         if ($partyLine !== null) {
-            $this->drawShadowedCenteredText(
+            $this->drawShadowedWrappedCenteredText(
                 $base,
                 $this->fontPath('regular'),
                 $partySize,
                 $centerX,
-                $topY + $nameSize + (int) round($width * 0.02),
+                $topY + ($linesDrawn * $lineHeight) + (int) round($width * 0.01),
+                $maxWidth,
+                $lineHeight,
                 $partyLine,
             );
         }
@@ -184,41 +198,86 @@ class AccessCardImageGenerator
         return null;
     }
 
-    private function drawShadowedCenteredText(
+    private function drawShadowedWrappedCenteredText(
         GdImage $image,
         string $fontPath,
         int $fontSize,
         int $centerX,
         int $topY,
+        int $maxWidth,
+        int $lineHeight,
         string $text,
-    ): void {
+    ): int {
         if (! function_exists('imagettftext')) {
             throw new RuntimeException('PHP FreeType support is required to render guest names on access cards.');
         }
 
-        $box = imagettfbbox($fontSize, 0, $fontPath, $text);
-
-        if ($box === false) {
-            throw new RuntimeException('Could not measure access card text: '.$text);
-        }
-
-        $textWidth = abs($box[2] - $box[0]);
-        $textHeight = abs($box[7] - $box[1]);
-        $x = $centerX - (int) round($textWidth / 2);
-        $baselineY = $topY + $textHeight;
-
+        $lines = $this->wrapText($text, $fontPath, $fontSize, $maxWidth);
         $shadow = imagecolorallocatealpha($image, 250, 246, 238, 20);
         $textColor = imagecolorallocate($image, 58, 44, 23);
 
-        foreach ([[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, 1]] as [$ox, $oy]) {
-            imagettftext($image, $fontSize, 0, $x + $ox, $baselineY + $oy, $shadow, $fontPath, $text);
+        foreach ($lines as $index => $line) {
+            $box = imagettfbbox($fontSize, 0, $fontPath, $line);
+
+            if ($box === false) {
+                throw new RuntimeException('Could not measure access card text: '.$line);
+            }
+
+            $textWidth = abs($box[2] - $box[0]);
+            $textHeight = abs($box[7] - $box[1]);
+            $x = $centerX - (int) round($textWidth / 2);
+            $baselineY = $topY + $textHeight + ($index * $lineHeight);
+
+            foreach ([[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, 1]] as [$ox, $oy]) {
+                imagettftext($image, $fontSize, 0, $x + $ox, $baselineY + $oy, $shadow, $fontPath, $line);
+            }
+
+            $result = imagettftext($image, $fontSize, 0, $x, $baselineY, $textColor, $fontPath, $line);
+
+            if ($result === false) {
+                throw new RuntimeException('Failed to draw access card text: '.$line);
+            }
         }
 
-        $result = imagettftext($image, $fontSize, 0, $x, $baselineY, $textColor, $fontPath, $text);
+        return count($lines);
+    }
 
-        if ($result === false) {
-            throw new RuntimeException('Failed to draw access card text: '.$text);
+    /**
+     * @return array<int, string>
+     */
+    private function wrapText(string $text, string $fontPath, int $fontSize, int $maxWidth): array
+    {
+        $words = preg_split('/\s+/u', trim($text)) ?: [];
+        $lines = [];
+        $current = '';
+
+        foreach ($words as $word) {
+            if ($word === '') {
+                continue;
+            }
+
+            $candidate = $current === '' ? $word : $current.' '.$word;
+            $box = imagettfbbox($fontSize, 0, $fontPath, $candidate);
+
+            if ($box === false) {
+                throw new RuntimeException('Could not measure access card text: '.$candidate);
+            }
+
+            $candidateWidth = abs($box[2] - $box[0]);
+
+            if ($candidateWidth > $maxWidth && $current !== '') {
+                $lines[] = $current;
+                $current = $word;
+            } else {
+                $current = $candidate;
+            }
         }
+
+        if ($current !== '') {
+            $lines[] = $current;
+        }
+
+        return $lines !== [] ? $lines : [$text];
     }
 
     private function fontPath(string $weight): string

@@ -182,7 +182,7 @@ class WhatsappAccessCardSendTest extends TestCase
                 && $body['template']['components'][2]['type'] === 'button'
                 && $body['template']['components'][2]['sub_type'] === 'url'
                 && $body['template']['components'][2]['index'] === '0'
-                && $body['template']['components'][2]['parameters'][0]['text'] === 'abcde'
+                && $body['template']['components'][2]['parameters'][0]['text'] === 'https://staging.fifiandkiki.com/access-card/abcde'
                 && count($body['template']['components']) === 3;
         });
 

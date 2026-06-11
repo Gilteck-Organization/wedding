@@ -74,9 +74,9 @@ class WhatsappTemplateComponents
         ];
 
         if (config('services.whatsapp.template_url_button', true)) {
-            $token = (string) $guest->access_token;
+            $buttonUrl = self::accessCardButtonUrl($guest);
 
-            if ($token !== '') {
+            if ($buttonUrl !== '') {
                 $components[] = [
                     'type' => 'button',
                     'sub_type' => 'url',
@@ -84,7 +84,7 @@ class WhatsappTemplateComponents
                     'parameters' => [
                         [
                             'type' => 'text',
-                            'text' => $token,
+                            'text' => $buttonUrl,
                         ],
                     ],
                 ];
@@ -92,5 +92,28 @@ class WhatsappTemplateComponents
         }
 
         return $components;
+    }
+
+    public static function accessCardButtonUrl(Guest $guest): string
+    {
+        $token = (string) $guest->access_token;
+
+        if ($token === '') {
+            return '';
+        }
+
+        $mode = (string) config('services.whatsapp.template_button_url_mode', 'full');
+
+        if ($mode === 'token') {
+            return $token;
+        }
+
+        $publicRoot = config('services.whatsapp.public_app_url');
+
+        if (is_string($publicRoot) && $publicRoot !== '') {
+            return rtrim($publicRoot, '/').'/access-card/'.$token;
+        }
+
+        return route('access-card', $guest, absolute: true);
     }
 }

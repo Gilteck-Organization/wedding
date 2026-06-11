@@ -307,7 +307,26 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 0;
+        gap: 0.125rem;
+    }
+
+    .access-card-stage__guest-line {
+        width: 100%;
+        font-size: 0.65rem;
+        line-height: 1.25;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        hyphens: auto;
+        text-wrap: balance;
+    }
+
+    .access-card-stage__party-line {
+        width: 100%;
+        font-size: 0.58rem;
+        line-height: 1.2;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        text-wrap: balance;
     }
 
     .access-card-stage__notice {
