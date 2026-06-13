@@ -13,6 +13,10 @@ class RsvpController extends Controller
 {
     public function phoneAvailability(Request $request): JsonResponse
     {
+        if (! config('wedding.rsvp_open')) {
+            return response()->json(['available' => false, 'closed' => true]);
+        }
+
         $phone = trim((string) $request->query('phone', ''));
         if ($phone === '') {
             return response()->json(['available' => true]);
@@ -25,6 +29,15 @@ class RsvpController extends Controller
 
     public function store(StoreRsvpRequest $request): RedirectResponse
     {
+        if (! config('wedding.rsvp_open')) {
+            return redirect()
+                ->route('wedding.home')
+                ->withFragment('rsvp')
+                ->withErrors([
+                    'capacity' => 'RSVP is closed. Thank you for thinking of us.',
+                ]);
+        }
+
         $validated = $request->validated();
 
         $capacity = (int) config('wedding.venue_capacity');

@@ -46,4 +46,9 @@ return [
     */
     'venue_capacity' => (int) env('WEDDING_VENUE_CAPACITY', 400),
 
+    /*
+    | When false, the public RSVP form is hidden and submissions are rejected.
+    */
+    'rsvp_open' => filter_var(env('WEDDING_RSVP_OPEN', false), FILTER_VALIDATE_BOOLEAN),
+
 ];

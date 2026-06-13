@@ -16,6 +16,7 @@ class RsvpCapacityTest extends TestCase
     {
         parent::setUp();
         $this->withoutMiddleware(ValidateCsrfToken::class);
+        Config::set('wedding.rsvp_open', true);
     }
 
     public function test_wedding_home_shows_rsvp_form_when_under_capacity(): void

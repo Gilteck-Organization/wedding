@@ -16,6 +16,7 @@ class RsvpSubmitTest extends TestCase
     {
         parent::setUp();
         $this->withoutMiddleware(ValidateCsrfToken::class);
+        config(['wedding.rsvp_open' => true]);
     }
 
     public function test_post_rsvp_hits_store_action_and_creates_record(): void

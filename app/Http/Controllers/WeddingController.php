@@ -14,7 +14,8 @@ class WeddingController extends Controller
         $rsvpCapacityReached = $seatsReserved >= $capacity;
 
         return view('wedding.index', [
-            'rsvpCapacityReached' => $rsvpCapacityReached,
+            'rsvpCapacityReached' => $seatsReserved >= $capacity,
+            'rsvpClosed' => ! config('wedding.rsvp_open'),
         ]);
     }
 }

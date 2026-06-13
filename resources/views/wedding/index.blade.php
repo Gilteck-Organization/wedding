@@ -98,9 +98,11 @@
                                 </a> --}}
                             </div>
                         @else
-                            <p class="mt-2 text-center text-sm text-wedding-muted">
-                                Kindly respond below. Strictly by invitation. This card admits only one person
-                            </p>
+                            @unless ($rsvpClosed)
+                                <p class="mt-2 text-center text-sm text-wedding-muted">
+                                    Kindly respond below. Strictly by invitation. This card admits only one person
+                                </p>
+                            @endunless
                             @if ($errors->any())
                                 <div class="mt-6 border border-red-400/50 bg-red-50/80 px-4 py-4">
                                     <p class="font-semibold text-red-800">Please fix the following:</p>
@@ -112,16 +114,26 @@
                                 </div>
                             @endif
 
-                            @if ($rsvpCapacityReached)
+                            @if ($rsvpClosed || $rsvpCapacityReached)
                                 <div
                                     class="mt-6 border border-wedding-primary/30 bg-wedding-ivory/95 px-6 py-8 text-center shadow-sm sm:px-10">
-                                    <p class="font-serif text-lg font-semibold text-wedding-primary">
-                                        You’re so welcome here.
-                                    </p>
-                                    <p class="mt-4 text-sm leading-relaxed text-wedding-muted">
-                                        Every seat for our celebration has been lovingly spoken for. We’re grateful you
-                                        wanted to share the day with us — thank you for your kindness and understanding.
-                                    </p>
+                                    @if ($rsvpClosed)
+                                        <p class="font-serif text-lg font-semibold text-wedding-primary">
+                                            You’re so welcome here.
+                                        </p>
+                                        <p class="mt-4 text-sm leading-relaxed text-wedding-muted">
+                                            Every seat for our celebration has been lovingly spoken for. We’re grateful you
+                                            wanted to share the day with us — thank you for your kindness and understanding.
+                                        </p>
+                                    @else
+                                        <p class="font-serif text-lg font-semibold text-wedding-primary">
+                                            You’re so welcome here.
+                                        </p>
+                                        <p class="mt-4 text-sm leading-relaxed text-wedding-muted">
+                                            Every seat for our celebration has been lovingly spoken for. We’re grateful you
+                                            wanted to share the day with us — thank you for your kindness and understanding.
+                                        </p>
+                                    @endif
                                     <p class="mt-5 font-serif text-sm font-medium text-wedding-onion">
                                         With love, Fifi &amp; Kiki
                                     </p>
