@@ -4,25 +4,86 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ApproveRsvpsBulkRequest;
+use App\Http\Requests\Admin\StoreRsvpFromAdminRequest;
 use App\Jobs\SendWhatsappReminderJob;
 use App\Models\Guest;
 use App\Models\Rsvp;
 use App\Services\Whatsapp\WhatsappSendGuard;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class RsvpAdminController extends Controller
 {
-    public function index(): View
+    public function create(): View
     {
-        $rsvps = Rsvp::with('guest')
+        return view('admin.rsvps.create');
+    }
+
+    public function index(Request $request): View
+    {
+        $search = trim((string) $request->query('search', ''));
+        $attendance = (string) $request->query('attendance', '');
+        $status = (string) $request->query('status', '');
+        $whatsappStatus = (string) $request->query('whatsapp_status', '');
+
+        $rsvps = Rsvp::query()
+            ->with('guest')
+            ->when($search !== '', function (Builder $builder) use ($search): void {
+                $builder->where(function (Builder $query) use ($search): void {
+                    $query
+                        ->where('name', 'like', '%'.$search.'%')
+                        ->orWhere('phone', 'like', '%'.$search.'%');
+                });
+            })
+            ->when(in_array($attendance, ['yes', 'no'], true), function (Builder $builder) use ($attendance): void {
+                $builder->where('attendance', $attendance);
+            })
+            ->when($status !== '', function (Builder $builder) use ($status): void {
+                if ($status === 'approved') {
+                    $builder->whereHas('guest', fn (Builder $guestQuery): Builder => $guestQuery->where('is_approved', true));
+
+                    return;
+                }
+
+                if ($status === 'pending') {
+                    $builder->where(function (Builder $query): void {
+                        $query
+                            ->whereDoesntHave('guest')
+                            ->orWhereHas('guest', fn (Builder $guestQuery): Builder => $guestQuery->where('is_approved', false));
+                    });
+
+                    return;
+                }
+
+                if ($status === 'revoked') {
+                    $builder->where(function (Builder $query): void {
+                        $query
+                            ->where('attendance', 'no')
+                            ->orWhereHas('guest', fn (Builder $guestQuery): Builder => $guestQuery->where('is_approved', false));
+                    });
+                }
+            })
+            ->when($whatsappStatus !== '', function (Builder $builder) use ($whatsappStatus): void {
+                $builder->whereHas('guest', function (Builder $guestQuery) use ($whatsappStatus): void {
+                    if ($whatsappStatus === 'none') {
+                        $guestQuery->whereNull('whatsapp_status');
+
+                        return;
+                    }
+
+                    $guestQuery->where('whatsapp_status', $whatsappStatus);
+                });
+            })
             ->orderByDesc('created_at')
-            ->paginate(20);
+            ->paginate(20)
+            ->withQueryString();
 
         $pendingCount = Rsvp::query()
+            ->where('attendance', 'yes')
             ->where(function (Builder $builder): void {
                 $builder
                     ->whereDoesntHave('guest')
@@ -33,11 +94,39 @@ class RsvpAdminController extends Controller
         return view('admin.rsvps.index', [
             'rsvps' => $rsvps,
             'pendingCount' => $pendingCount,
+            'filters' => [
+                'search' => $search,
+                'attendance' => $attendance,
+                'status' => $status,
+                'whatsapp_status' => $whatsappStatus,
+            ],
         ]);
+    }
+
+    public function storeFromAdmin(StoreRsvpFromAdminRequest $request): RedirectResponse
+    {
+        $validated = $request->validated();
+
+        Rsvp::query()->create([
+            'guest_id' => null,
+            'name' => $validated['name'],
+            'phone' => $validated['phone'],
+            'attendance' => $validated['attendance'],
+            'guest_count' => $validated['attendance'] === 'yes' ? 1 : null,
+            'message' => null,
+        ]);
+
+        return redirect()->route('admin.rsvps.index');
     }
 
     public function approve(Rsvp $rsvp): RedirectResponse
     {
+        if ($rsvp->attendance !== 'yes') {
+            return redirect()
+                ->route('admin.rsvps.index')
+                ->with('success', 'Only guests marked as attending can be approved.');
+        }
+
         $guest = $this->approveRsvp($rsvp);
 
         if (WhatsappSendGuard::isConfigured()) {
@@ -58,6 +147,7 @@ class RsvpAdminController extends Controller
         $action = (string) $request->validated('action');
 
         $query = Rsvp::query()
+            ->where('attendance', 'yes')
             ->where(function (Builder $builder): void {
                 $builder
                     ->whereDoesntHave('guest')
@@ -144,6 +234,20 @@ class RsvpAdminController extends Controller
             ->with('success', 'Attendance revoked for '.$rsvp->name.'. Access card is no longer valid.');
     }
 
+    public function markAttending(Rsvp $rsvp): RedirectResponse
+    {
+        DB::transaction(function () use ($rsvp): void {
+            $rsvp->update([
+                'attendance' => 'yes',
+                'guest_count' => $rsvp->guest_count ?? 1,
+            ]);
+        });
+
+        return redirect()
+            ->route('admin.rsvps.index')
+            ->with('success', $rsvp->name.' is now marked as attending. You can approve this RSVP.');
+    }
+
     public function exportCsv(): StreamedResponse
     {
         $headers = [
@@ -216,11 +320,6 @@ class RsvpAdminController extends Controller
             ]);
 
             $rsvp->guest_id = $guest->id;
-
-            if ($rsvp->attendance === 'no') {
-                $rsvp->attendance = 'yes';
-                $rsvp->guest_count = $rsvp->guest_count ?? 1;
-            }
 
             $rsvp->save();
 

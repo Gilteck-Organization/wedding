@@ -13,10 +13,6 @@ class RsvpController extends Controller
 {
     public function phoneAvailability(Request $request): JsonResponse
     {
-        if (! config('wedding.rsvp_open')) {
-            return response()->json(['available' => false, 'closed' => true]);
-        }
-
         $phone = trim((string) $request->query('phone', ''));
         if ($phone === '') {
             return response()->json(['available' => true]);

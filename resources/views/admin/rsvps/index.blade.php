@@ -11,6 +11,10 @@
             </div>
 
             <div class="flex gap-3 reveal" data-reveal>
+                <a href="{{ route('admin.rsvps.create') }}"
+                    class="inline-flex items-center justify-center rounded-none px-5 py-2.5 text-[#2c2418] font-semibold border border-[#946112]/40 bg-white/70 shadow-sm hover:-translate-y-0.5 transition-all">
+                    Add RSVP
+                </a>
                 <a href="{{ route('admin.dashboard') }}"
                     class="inline-flex items-center justify-center rounded-none px-5 py-2.5 text-[#2c2418] font-semibold border border-[#946112]/40 bg-white/70 shadow-sm hover:-translate-y-0.5 transition-all">
                     Dashboard
@@ -37,6 +41,51 @@
                 </ul>
             </div>
         @endif
+
+        <form action="{{ route('admin.rsvps.index') }}" method="GET"
+            class="mt-6 rounded-none border border-[#946112]/20 bg-[#fffdf8]/95 p-4 sm:p-5 shadow">
+            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                <input type="text" name="search" value="{{ $filters['search'] ?? '' }}"
+                    placeholder="Search name or number"
+                    class="w-full border border-[#946112]/30 bg-white px-3 py-2 text-sm text-[#2c2418] outline-none focus:border-[#946112]">
+
+                <select name="attendance"
+                    class="w-full border border-[#946112]/30 bg-white px-3 py-2 text-sm text-[#2c2418] outline-none focus:border-[#946112]">
+                    <option value="">All attendance</option>
+                    <option value="yes" @selected(($filters['attendance'] ?? '') === 'yes')>Attending (Yes)</option>
+                    <option value="no" @selected(($filters['attendance'] ?? '') === 'no')>Not attending (No)</option>
+                </select>
+
+                <select name="status"
+                    class="w-full border border-[#946112]/30 bg-white px-3 py-2 text-sm text-[#2c2418] outline-none focus:border-[#946112]">
+                    <option value="">All status</option>
+                    <option value="approved" @selected(($filters['status'] ?? '') === 'approved')>Approved</option>
+                    <option value="pending" @selected(($filters['status'] ?? '') === 'pending')>Pending</option>
+                    <option value="revoked" @selected(($filters['status'] ?? '') === 'revoked')>Revoked</option>
+                </select>
+
+                <select name="whatsapp_status"
+                    class="w-full border border-[#946112]/30 bg-white px-3 py-2 text-sm text-[#2c2418] outline-none focus:border-[#946112]">
+                    <option value="">All WhatsApp</option>
+                    <option value="none" @selected(($filters['whatsapp_status'] ?? '') === 'none')>No WhatsApp yet</option>
+                    <option value="sent" @selected(($filters['whatsapp_status'] ?? '') === 'sent')>Sent</option>
+                    <option value="delivered" @selected(($filters['whatsapp_status'] ?? '') === 'delivered')>Delivered</option>
+                    <option value="read" @selected(($filters['whatsapp_status'] ?? '') === 'read')>Read</option>
+                    <option value="retrying" @selected(($filters['whatsapp_status'] ?? '') === 'retrying')>Retrying</option>
+                    <option value="failed" @selected(($filters['whatsapp_status'] ?? '') === 'failed')>Failed</option>
+                </select>
+
+                <div class="flex gap-2">
+                    <button type="submit" class="btn-wired px-4 py-2 text-xs sm:text-sm">
+                        <span class="btn-wired__text">Filter</span>
+                    </button>
+                    <a href="{{ route('admin.rsvps.index') }}"
+                        class="inline-flex items-center justify-center rounded-none px-4 py-2 text-xs font-semibold text-[#2c2418] border border-[#946112]/40 bg-white/70 shadow-sm hover:-translate-y-0.5 transition-all">
+                        Clear
+                    </a>
+                </div>
+            </div>
+        </form>
 
         {{-- Bulk approve: form id + form="" attribute so row action forms are not nested inside --}}
         <form id="bulk-approve-form" action="{{ route('admin.rsvps.bulk-approve') }}" method="POST" class="hidden">
@@ -80,13 +129,14 @@
                         @forelse ($rsvps as $rsvp)
                             @php
                                 $isApproved = (bool) ($rsvp->guest?->is_approved ?? false);
+                                $canApprove = ! $isApproved && $rsvp->attendance === 'yes';
                             @endphp
                             <tr class="border-t border-[#946112]/10">
                                 <td class="px-4 py-3">
-                                    @unless ($isApproved)
+                                    @if ($canApprove)
                                         <input type="checkbox" form="bulk-approve-form" name="rsvp_ids[]" value="{{ $rsvp->id }}"
                                             class="rsvp-select-checkbox rounded border-[#946112]/40 text-[#946112] focus:ring-[#946112]/30">
-                                    @endunless
+                                    @endif
                                 </td>
                                 <td class="px-4 py-3 font-medium text-[#2c2418]">{{ $rsvp->name }}</td>
                                 <td class="px-4 py-3 text-[#2c2418]">{{ $rsvp->phone }}</td>
@@ -155,13 +205,23 @@
                                                             Resend WhatsApp
                                                         </button>
                                                     </form>
-                                                @else
+                                                @elseif ($rsvp->attendance === 'yes')
                                                     <form action="{{ route('admin.rsvps.approve', $rsvp) }}" method="POST"
                                                         class="m-0">
                                                         @csrf
                                                         <button type="submit" role="menuitem"
                                                             class="btn-wired admin-action-btn w-full justify-start rounded-none border-0 px-4 py-2.5 text-xs shadow-none">
                                                             <span class="btn-wired__text">Approve</span>
+                                                        </button>
+                                                    </form>
+                                                @else
+                                                    <form action="{{ route('admin.rsvps.mark-attending', $rsvp) }}"
+                                                        method="POST" class="m-0"
+                                                        onsubmit="return confirm({{ \Illuminate\Support\Js::from('Mark '.$rsvp->name.' as attending (Yes)?') }})">
+                                                        @csrf
+                                                        <button type="submit" role="menuitem"
+                                                            class="w-full px-4 py-2.5 text-left text-xs font-semibold text-[#2c2418] transition-colors hover:bg-[#946112]/10">
+                                                            Mark as attending
                                                         </button>
                                                     </form>
                                                 @endif
