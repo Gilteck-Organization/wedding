@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ApproveRsvpsBulkRequest;
+use App\Http\Requests\Admin\DeleteRsvpsBulkRequest;
 use App\Http\Requests\Admin\StoreRsvpFromAdminRequest;
 use App\Jobs\SendWhatsappReminderJob;
 use App\Models\Guest;
@@ -91,9 +92,12 @@ class RsvpAdminController extends Controller
             })
             ->count();
 
+        $trashedCount = Rsvp::onlyTrashed()->count();
+
         return view('admin.rsvps.index', [
             'rsvps' => $rsvps,
             'pendingCount' => $pendingCount,
+            'trashedCount' => $trashedCount,
             'filters' => [
                 'search' => $search,
                 'attendance' => $attendance,
@@ -101,6 +105,56 @@ class RsvpAdminController extends Controller
                 'whatsapp_status' => $whatsappStatus,
             ],
         ]);
+    }
+
+    public function trashed(Request $request): View
+    {
+        $search = trim((string) $request->query('search', ''));
+
+        $rsvps = Rsvp::onlyTrashed()
+            ->with('guest')
+            ->when($search !== '', function (Builder $builder) use ($search): void {
+                $builder->where(function (Builder $query) use ($search): void {
+                    $query
+                        ->where('name', 'like', '%'.$search.'%')
+                        ->orWhere('phone', 'like', '%'.$search.'%');
+                });
+            })
+            ->orderByDesc('deleted_at')
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('admin.rsvps.trashed', [
+            'rsvps' => $rsvps,
+            'filters' => [
+                'search' => $search,
+            ],
+        ]);
+    }
+
+    public function restore(int $rsvp): RedirectResponse
+    {
+        $rsvpModel = Rsvp::onlyTrashed()->findOrFail($rsvp);
+
+        $phoneTaken = Rsvp::query()
+            ->where('phone', $rsvpModel->phone)
+            ->whereKeyNot($rsvpModel->id)
+            ->exists();
+
+        if ($phoneTaken) {
+            return redirect()
+                ->route('admin.rsvps.trashed')
+                ->withErrors([
+                    'restore' => 'Cannot restore '.$rsvpModel->name.' — another active RSVP already uses this phone number.',
+                ]);
+        }
+
+        $name = $rsvpModel->name;
+        $rsvpModel->restore();
+
+        return redirect()
+            ->route('admin.rsvps.trashed')
+            ->with('success', 'RSVP for '.$name.' has been restored.');
     }
 
     public function storeFromAdmin(StoreRsvpFromAdminRequest $request): RedirectResponse
@@ -248,6 +302,41 @@ class RsvpAdminController extends Controller
             ->with('success', $rsvp->name.' is now marked as attending. You can approve this RSVP.');
     }
 
+    public function destroy(Rsvp $rsvp): RedirectResponse
+    {
+        $name = $rsvp->name;
+
+        $this->softDeleteRsvp($rsvp);
+
+        return redirect()
+            ->route('admin.rsvps.index')
+            ->with('success', 'RSVP for '.$name.' has been deleted.');
+    }
+
+    public function destroyBulk(DeleteRsvpsBulkRequest $request): RedirectResponse
+    {
+        $rsvps = Rsvp::query()
+            ->whereIn('id', $request->validated('rsvp_ids'))
+            ->orderBy('id')
+            ->get();
+
+        if ($rsvps->isEmpty()) {
+            return redirect()
+                ->route('admin.rsvps.index')
+                ->with('success', 'No RSVPs matched that action.');
+        }
+
+        foreach ($rsvps as $rsvp) {
+            $this->softDeleteRsvp($rsvp);
+        }
+
+        $count = $rsvps->count();
+
+        return redirect()
+            ->route('admin.rsvps.index')
+            ->with('success', $count.' RSVP'.($count === 1 ? '' : 's').' deleted.');
+    }
+
     public function exportCsv(): StreamedResponse
     {
         $headers = [
@@ -291,6 +380,22 @@ class RsvpAdminController extends Controller
                 'Content-Type' => 'text/csv; charset=UTF-8',
             ],
         );
+    }
+
+    private function softDeleteRsvp(Rsvp $rsvp): void
+    {
+        DB::transaction(function () use ($rsvp): void {
+            $guest = $rsvp->guest;
+
+            if ($guest !== null) {
+                $guest->update([
+                    'is_approved' => false,
+                    'qr_code' => null,
+                ]);
+            }
+
+            $rsvp->delete();
+        });
     }
 
     private function approveRsvp(Rsvp $rsvp): Guest

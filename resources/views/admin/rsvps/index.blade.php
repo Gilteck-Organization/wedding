@@ -10,14 +10,14 @@
                 </p>
             </div>
 
-            <div class="flex gap-3 reveal" data-reveal>
+            <div class="flex flex-wrap gap-3 reveal" data-reveal>
                 <a href="{{ route('admin.rsvps.create') }}"
                     class="inline-flex items-center justify-center rounded-none px-5 py-2.5 text-[#2c2418] font-semibold border border-[#946112]/40 bg-white/70 shadow-sm hover:-translate-y-0.5 transition-all">
                     Add RSVP
                 </a>
-                <a href="{{ route('admin.dashboard') }}"
-                    class="inline-flex items-center justify-center rounded-none px-5 py-2.5 text-[#2c2418] font-semibold border border-[#946112]/40 bg-white/70 shadow-sm hover:-translate-y-0.5 transition-all">
-                    Dashboard
+                <a href="{{ route('admin.rsvps.trashed') }}"
+                    class="inline-flex items-center justify-center gap-2 rounded-none px-5 py-2.5 text-[#2c2418] font-semibold border border-[#803b48]/30 bg-white/70 shadow-sm hover:-translate-y-0.5 transition-all">
+                    Deleted RSVPs
                 </a>
                 <a href="{{ route('admin.rsvps.export.csv') }}"
                     class="inline-flex items-center justify-center rounded-none px-5 py-2.5 text-[#2c2418] font-semibold border border-[#946112]/50 bg-white/70 shadow-sm hover:-translate-y-0.5 transition-all">
@@ -87,23 +87,31 @@
             </div>
         </form>
 
-        {{-- Bulk approve: form id + form="" attribute so row action forms are not nested inside --}}
+        {{-- Bulk actions: separate forms + form="" attribute so row action forms are not nested inside --}}
         <form id="bulk-approve-form" action="{{ route('admin.rsvps.bulk-approve') }}" method="POST" class="hidden">
+            @csrf
+        </form>
+        <form id="bulk-delete-form" action="{{ route('admin.rsvps.bulk-delete') }}" method="POST" class="hidden">
             @csrf
         </form>
 
         <div class="mt-6 space-y-4">
             <div class="flex flex-wrap gap-3">
+                <button type="button" data-bulk-submit="bulk-approve-form" data-bulk-action="selected"
+                    class="inline-flex items-center justify-center rounded-none px-5 py-2.5 text-xs font-semibold text-[#2c2418] border border-[#946112]/40 bg-white/70 shadow-sm hover:-translate-y-0.5 transition-all disabled:opacity-50"
+                    onclick="return window.submitRsvpBulkForm(this, 'Approve selected RSVPs?')">
+                    Approve selected
+                </button>
                 <button type="submit" form="bulk-approve-form" name="action" value="all_pending"
                     class="btn-wired px-5 py-2.5 text-xs sm:text-sm"
                     @disabled(($pendingCount ?? 0) === 0)
                     onclick="return confirm('Approve all {{ $pendingCount ?? 0 }} pending RSVPs? Welcome reminders will be queued for each guest.')">
                     <span class="btn-wired__text">Approve all pending ({{ $pendingCount ?? 0 }})</span>
                 </button>
-                <button type="submit" form="bulk-approve-form" name="action" value="selected"
-                    class="inline-flex items-center justify-center rounded-none px-5 py-2.5 text-xs font-semibold text-[#2c2418] border border-[#946112]/40 bg-white/70 shadow-sm hover:-translate-y-0.5 transition-all disabled:opacity-50"
-                    onclick="return confirm('Approve selected RSVPs?')">
-                    Approve selected
+                <button type="button" data-bulk-submit="bulk-delete-form"
+                    class="inline-flex items-center justify-center rounded-none px-5 py-2.5 text-xs font-semibold text-[#803b48] border border-[#803b48]/35 bg-white/70 shadow-sm hover:-translate-y-0.5 transition-all disabled:opacity-50"
+                    onclick="return window.submitRsvpBulkForm(this, 'Delete selected RSVPs? Approved guests will lose access until re-added.')">
+                    Delete selected
                 </button>
             </div>
 
@@ -113,7 +121,9 @@
                     <thead>
                         <tr class="bg-[#fffdf8]/90">
                             <th class="text-left px-4 py-3 font-semibold text-[#2c2418]/80">
-                                <span class="sr-only">Select</span>
+                                <input type="checkbox" id="rsvp-select-all"
+                                    class="rounded border-[#946112]/40 text-[#946112] focus:ring-[#946112]/30"
+                                    aria-label="Select all RSVPs on this page">
                             </th>
                             <th class="text-left px-4 py-3 font-semibold text-[#2c2418]/80">Name</th>
                             <th class="text-left px-4 py-3 font-semibold text-[#2c2418]/80">Phone</th>
@@ -133,10 +143,9 @@
                             @endphp
                             <tr class="border-t border-[#946112]/10">
                                 <td class="px-4 py-3">
-                                    @if ($canApprove)
-                                        <input type="checkbox" form="bulk-approve-form" name="rsvp_ids[]" value="{{ $rsvp->id }}"
-                                            class="rsvp-select-checkbox rounded border-[#946112]/40 text-[#946112] focus:ring-[#946112]/30">
-                                    @endif
+                                    <input type="checkbox" name="rsvp_ids[]" value="{{ $rsvp->id }}"
+                                        class="rsvp-select-checkbox rounded border-[#946112]/40 text-[#946112] focus:ring-[#946112]/30"
+                                        aria-label="Select {{ $rsvp->name }}">
                                 </td>
                                 <td class="px-4 py-3 font-medium text-[#2c2418]">{{ $rsvp->name }}</td>
                                 <td class="px-4 py-3 text-[#2c2418]">{{ $rsvp->phone }}</td>
@@ -226,6 +235,17 @@
                                                     </form>
                                                 @endif
                                                 <div class="my-1 border-t border-[#946112]/15" role="separator"></div>
+                                                <form action="{{ route('admin.rsvps.destroy', $rsvp) }}" method="POST"
+                                                    class="m-0"
+                                                    onsubmit="return confirm({{ \Illuminate\Support\Js::from('Delete RSVP for '.$rsvp->name.'? This removes them from the list and revokes any access card.') }})">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" role="menuitem"
+                                                        class="w-full px-4 py-2.5 text-left text-xs font-semibold text-[#803b48] transition-colors hover:bg-[#803b48]/10">
+                                                        Delete RSVP
+                                                    </button>
+                                                </form>
+                                                <div class="my-1 border-t border-[#946112]/15" role="separator"></div>
                                                 @if ($rsvp->attendance === 'yes')
                                                     <form action="{{ route('admin.rsvps.revoke-attendance', $rsvp) }}"
                                                         method="POST" class="m-0"
@@ -269,7 +289,61 @@
     </div>
 
     <script>
+        window.submitRsvpBulkForm = function(buttonEl, confirmMessage) {
+            var checked = document.querySelectorAll('.rsvp-select-checkbox:checked');
+            if (checked.length === 0) {
+                alert('Select at least one RSVP first.');
+                return false;
+            }
+
+            if (!confirm(confirmMessage)) {
+                return false;
+            }
+
+            var formId = buttonEl.getAttribute('data-bulk-submit');
+            var form = document.getElementById(formId);
+            if (!form) {
+                return false;
+            }
+
+            form.querySelectorAll('input[name="rsvp_ids[]"]').forEach(function(input) {
+                input.remove();
+            });
+            form.querySelectorAll('input[name="action"]').forEach(function(input) {
+                input.remove();
+            });
+
+            checked.forEach(function(checkbox) {
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'rsvp_ids[]';
+                input.value = checkbox.value;
+                form.appendChild(input);
+            });
+
+            var bulkAction = buttonEl.getAttribute('data-bulk-action');
+            if (bulkAction) {
+                var actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = bulkAction;
+                form.appendChild(actionInput);
+            }
+
+            form.submit();
+            return false;
+        };
+
         (function() {
+            var selectAll = document.getElementById('rsvp-select-all');
+            if (selectAll) {
+                selectAll.addEventListener('change', function() {
+                    document.querySelectorAll('.rsvp-select-checkbox').forEach(function(checkbox) {
+                        checkbox.checked = selectAll.checked;
+                    });
+                });
+            }
+
             function positionMenuPanel(detailsEl) {
                 var panel = detailsEl.querySelector('[data-admin-rsvp-menu-panel]');
                 var summaryEl = detailsEl.querySelector('summary');

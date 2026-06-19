@@ -52,10 +52,14 @@ Route::middleware('auth')->prefix('admin')->group(function (): void {
     Route::get('/profile', [AdminProfileController::class, 'edit'])->name('admin.profile.edit');
     Route::put('/profile', [AdminProfileController::class, 'update'])->name('admin.profile.update');
     Route::get('/rsvps', [RsvpAdminController::class, 'index'])->name('admin.rsvps.index');
+    Route::get('/rsvps/trashed', [RsvpAdminController::class, 'trashed'])->name('admin.rsvps.trashed');
     Route::get('/rsvps/create', [RsvpAdminController::class, 'create'])->name('admin.rsvps.create');
     Route::post('/rsvps', [RsvpAdminController::class, 'storeFromAdmin'])->name('admin.rsvps.store');
     Route::post('/rsvps/bulk-approve', [RsvpAdminController::class, 'approveBulk'])->name('admin.rsvps.bulk-approve');
+    Route::post('/rsvps/bulk-delete', [RsvpAdminController::class, 'destroyBulk'])->name('admin.rsvps.bulk-delete');
     Route::post('/rsvps/{rsvp}/approve', [RsvpAdminController::class, 'approve'])->name('admin.rsvps.approve');
+    Route::delete('/rsvps/{rsvp}', [RsvpAdminController::class, 'destroy'])->name('admin.rsvps.destroy');
+    Route::post('/rsvps/trashed/{rsvp}/restore', [RsvpAdminController::class, 'restore'])->name('admin.rsvps.restore');
     Route::post('/rsvps/{rsvp}/mark-attending', [RsvpAdminController::class, 'markAttending'])->name('admin.rsvps.mark-attending');
     Route::post('/rsvps/{rsvp}/revoke-attendance', [RsvpAdminController::class, 'revokeAttendance'])->name('admin.rsvps.revoke-attendance');
     Route::post('/rsvps/{rsvp}/resend-whatsapp', [RsvpAdminController::class, 'resendWhatsapp'])->name('admin.rsvps.resend-whatsapp');
