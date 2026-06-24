@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\RedirectMalformedAccessCardUrl;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -13,6 +14,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->redirectGuestsTo(fn (): string => route('login'));
         $middleware->redirectUsersTo(fn (): string => route('admin.dashboard'));
+        $middleware->web(prepend: [
+            RedirectMalformedAccessCardUrl::class,
+        ]);
         $middleware->validateCsrfTokens(except: [
             'webhook/whatsapp',
         ]);
