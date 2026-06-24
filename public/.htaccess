@@ -5,6 +5,11 @@
 
     RewriteEngine On
 
+    # Fix malformed WhatsApp access-card links (e.g. /access-card/{{1}}https://…/access-card/TOKEN).
+    RewriteCond %{REQUEST_URI} ^/access-card/
+    RewriteCond %{REQUEST_URI} !^/access-card/[a-z]{5}(/|$|\?)
+    RewriteRule ^access-card/.*/access-card/([a-z]{5})(/.*)?$ /access-card/$1$2 [R=302,L,NE]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

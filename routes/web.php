@@ -39,6 +39,9 @@ Route::post('/access-card/{guest}/verify', [AccessCardController::class, 'verify
     ->where('guest', '[a-z]{5}')
     ->middleware('throttle:20,1')
     ->name('access-card.verify.submit');
+Route::get('/access-card/{malformed}', [AccessCardController::class, 'redirectMalformed'])
+    ->where('malformed', '.+')
+    ->name('access-card.redirect-malformed');
 
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [LoginController::class, 'create'])->name('login');

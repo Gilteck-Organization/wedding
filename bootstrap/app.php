@@ -14,9 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->redirectGuestsTo(fn (): string => route('login'));
         $middleware->redirectUsersTo(fn (): string => route('admin.dashboard'));
-        $middleware->web(prepend: [
-            RedirectMalformedAccessCardUrl::class,
-        ]);
+        $middleware->prepend(RedirectMalformedAccessCardUrl::class);
         $middleware->validateCsrfTokens(except: [
             'webhook/whatsapp',
         ]);

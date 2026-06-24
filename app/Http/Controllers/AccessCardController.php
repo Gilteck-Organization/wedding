@@ -6,7 +6,9 @@ use App\Http\Requests\UnlockAccessCardRequest;
 use App\Models\AccessName;
 use App\Models\Guest;
 use App\Services\AccessCard\AccessCardImageGenerator;
+use App\Services\AccessCard\MalformedAccessCardUrlResolver;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -86,5 +88,19 @@ class AccessCardController extends Controller
         session()->put($guest->sessionUnlockKey(), true);
 
         return redirect()->route('access-card.verify', $guest);
+    }
+
+    /**
+     * Catch malformed WhatsApp button URLs that do not match the 5-letter token routes.
+     */
+    public function redirectMalformed(Request $request): RedirectResponse
+    {
+        $corrected = MalformedAccessCardUrlResolver::resolve($request->getRequestUri());
+
+        if ($corrected === null) {
+            abort(404);
+        }
+
+        return redirect()->to($corrected, 302);
     }
 }
