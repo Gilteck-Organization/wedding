@@ -279,6 +279,7 @@ class RsvpAdminController extends Controller
                 $guest->update([
                     'is_approved' => false,
                     'qr_code' => null,
+                    'qr_verified_at' => null,
                 ]);
             }
         });
@@ -391,6 +392,7 @@ class RsvpAdminController extends Controller
                 $guest->update([
                     'is_approved' => false,
                     'qr_code' => null,
+                    'qr_verified_at' => null,
                 ]);
             }
 

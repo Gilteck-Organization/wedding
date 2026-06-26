@@ -9,6 +9,7 @@ use App\Services\AccessCard\AccessCardImageGenerator;
 use App\Services\AccessCard\MalformedAccessCardUrlResolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -48,7 +49,7 @@ class AccessCardController extends Controller
     }
 
     /**
-     * URL encoded in the QR on the card: global access name for guests, verified page for staff or after success.
+     * URL encoded in the QR on the card: one-time check-in via access name (or admin scan).
      */
     public function verify(Guest $guest): View|RedirectResponse
     {
@@ -58,15 +59,17 @@ class AccessCardController extends Controller
             return redirect()->route('wedding.home');
         }
 
-        if (auth()->check()) {
-            return view('wedding.access-card-admin-verify', [
+        if ($guest->isQrVerified()) {
+            return view('wedding.access-card-already-scanned', [
                 'guest' => $guest,
             ]);
         }
 
-        if (session()->get($guest->sessionUnlockKey())) {
+        if (auth()->check()) {
+            $this->markQrVerifiedOnce($guest);
+
             return view('wedding.access-card-admin-verify', [
-                'guest' => $guest,
+                'guest' => $guest->fresh('latestRsvp'),
             ]);
         }
 
@@ -75,19 +78,29 @@ class AccessCardController extends Controller
         ]);
     }
 
-    public function verifySubmit(UnlockAccessCardRequest $request, Guest $guest): RedirectResponse
+    public function verifySubmit(UnlockAccessCardRequest $request, Guest $guest): RedirectResponse|View
     {
         if (! $guest->is_approved || ! $guest->qr_code) {
             return redirect()->route('wedding.home');
+        }
+
+        if ($guest->isQrVerified()) {
+            return redirect()->route('access-card.verify', $guest);
         }
 
         if (! AccessName::matches($request->validated('name'))) {
             return redirect()->route('wedding.home');
         }
 
-        session()->put($guest->sessionUnlockKey(), true);
+        if (! $this->markQrVerifiedOnce($guest)) {
+            return redirect()->route('access-card.verify', $guest);
+        }
 
-        return redirect()->route('access-card.verify', $guest);
+        $guest->load('latestRsvp');
+
+        return view('wedding.access-card-admin-verify', [
+            'guest' => $guest,
+        ]);
     }
 
     /**
@@ -102,5 +115,18 @@ class AccessCardController extends Controller
         }
 
         return redirect()->to($corrected, 302);
+    }
+
+    private function markQrVerifiedOnce(Guest $guest): bool
+    {
+        return DB::transaction(function () use ($guest): bool {
+            $lockedGuest = Guest::query()->lockForUpdate()->find($guest->getKey());
+
+            if ($lockedGuest === null) {
+                return false;
+            }
+
+            return $lockedGuest->markQrVerified();
+        });
     }
 }

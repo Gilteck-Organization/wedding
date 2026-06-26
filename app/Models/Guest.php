@@ -23,6 +23,7 @@ class Guest extends Model
         'access_token',
         'qr_code',
         'is_approved',
+        'qr_verified_at',
         'whatsapp_message_id',
         'whatsapp_status',
         'whatsapp_status_at',
@@ -38,6 +39,7 @@ class Guest extends Model
     {
         return [
             'is_approved' => 'boolean',
+            'qr_verified_at' => 'datetime',
             'whatsapp_status_at' => 'datetime',
             'whatsapp_last_sent_at' => 'datetime',
             'whatsapp_reminder_sent_at' => 'datetime',
@@ -103,5 +105,37 @@ class Guest extends Model
     public function sessionUnlockKey(): string
     {
         return 'access_card_unlocked.'.$this->access_token;
+    }
+
+    public function isQrVerified(): bool
+    {
+        return $this->qr_verified_at !== null;
+    }
+
+    /**
+     * Mark this guest's QR as used for entry. Returns false if already verified.
+     */
+    public function markQrVerified(): bool
+    {
+        if ($this->isQrVerified()) {
+            return false;
+        }
+
+        $this->forceFill([
+            'qr_verified_at' => now(),
+        ])->save();
+
+        return true;
+    }
+
+    public function resetQrVerification(): void
+    {
+        if ($this->qr_verified_at === null) {
+            return;
+        }
+
+        $this->forceFill([
+            'qr_verified_at' => null,
+        ])->save();
     }
 }
