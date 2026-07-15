@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SendWhatsappBulkRequest;
 use App\Jobs\SendAccessCardWhatsappJob;
 use App\Jobs\SendWhatsappReminderJob;
+use App\Jobs\SendWhatsappThankYouJob;
 use App\Models\Guest;
 use App\Services\Whatsapp\WhatsappSendGuard;
 use Illuminate\Database\Eloquent\Builder;
@@ -23,32 +24,42 @@ class WhatsappAdminController extends Controller
             ->orderBy('name')
             ->get();
 
+        $attended = $guests->filter(fn (Guest $guest): bool => $guest->isQrVerified());
+
         $stats = [
             'total' => $guests->count(),
             'no_reminder' => $guests->filter(fn (Guest $guest): bool => $guest->whatsapp_reminder_sent_at === null)->count(),
             'reminder_only' => $guests->filter(fn (Guest $guest): bool => $guest->whatsapp_reminder_sent_at !== null && $guest->whatsapp_status === null)->count(),
             'cards_sent' => $guests->whereIn('whatsapp_status', ['sent', 'delivered', 'read'])->count(),
             'cards_delivered' => $guests->whereIn('whatsapp_status', ['delivered', 'read'])->count(),
-            'failed' => $guests->filter(fn (Guest $guest): bool => filled($guest->whatsapp_reminder_error) || in_array($guest->whatsapp_status, ['failed', 'retrying'], true))->count(),
+            'failed' => $guests->filter(fn (Guest $guest): bool => filled($guest->whatsapp_reminder_error) || in_array($guest->whatsapp_status, ['failed', 'retrying'], true) || filled($guest->whatsapp_thankyou_error))->count(),
+            'attended' => $attended->count(),
+            'thankyou_pending' => $attended->filter(fn (Guest $guest): bool => $guest->whatsapp_thankyou_sent_at === null)->count(),
+            'thankyou_sent' => $attended->filter(fn (Guest $guest): bool => $guest->whatsapp_thankyou_sent_at !== null)->count(),
         ];
 
         return view('admin.whatsapp.index', [
             'guests' => $guests,
             'stats' => $stats,
             'whatsappConfigured' => WhatsappSendGuard::isConfigured(),
+            'thankYouConfigured' => WhatsappSendGuard::isThankYouConfigured(),
         ]);
     }
 
     public function send(SendWhatsappBulkRequest $request): RedirectResponse
     {
+        $phase = (string) $request->validated('phase');
+        $action = (string) $request->validated('action');
+
+        if ($phase === 'thank_you') {
+            return $this->sendThankYou($action, $request->validated('guest_ids', []));
+        }
+
         if (! WhatsappSendGuard::isConfigured()) {
             return redirect()
                 ->route('admin.whatsapp.index')
                 ->with('success', 'WhatsApp is not configured. Set WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_NUMBER_ID, WHATSAPP_REMINDER_TEMPLATE_NAME, and WHATSAPP_TEMPLATE_NAME.');
         }
-
-        $phase = (string) $request->validated('phase');
-        $action = (string) $request->validated('action');
 
         $guests = $this->guestsForAction($phase, $action, $request->validated('guest_ids', []));
 
@@ -102,11 +113,77 @@ class WhatsappAdminController extends Controller
 
     /**
      * @param  array<int, int>  $guestIds
+     */
+    private function sendThankYou(string $action, array $guestIds): RedirectResponse
+    {
+        if (! WhatsappSendGuard::isThankYouConfigured()) {
+            return redirect()
+                ->route('admin.whatsapp.index')
+                ->with('success', 'Thank-you WhatsApp is not configured. Set WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_NUMBER_ID, and WHATSAPP_THANKYOU_TEMPLATE_NAME (thank_fifi_kiki).');
+        }
+
+        $guests = $this->guestsForAction('thank_you', $action, $guestIds);
+
+        if ($guests->isEmpty()) {
+            return redirect()
+                ->route('admin.whatsapp.index')
+                ->with('success', 'No checked-in guests matched that thank-you action.');
+        }
+
+        $queued = 0;
+
+        foreach ($guests as $guest) {
+            if (! $guest->isQrVerified()) {
+                continue;
+            }
+
+            SendWhatsappThankYouJob::dispatch($guest, force: $this->shouldForceThankYou($guest, $action));
+            $queued++;
+        }
+
+        if ($queued === 0) {
+            return redirect()
+                ->route('admin.whatsapp.index')
+                ->with('success', 'No thank-you messages were queued. Only guests who were scanned at the door can receive this.');
+        }
+
+        $label = match ($action) {
+            'all_pending' => 'Pending thank-you messages',
+            'all_failed' => 'Failed thank-you messages',
+            'all_approved' => 'Thank-you to all checked-in guests (resend)',
+            'selected' => 'Selected thank-you messages',
+            default => 'Thank-you messages',
+        };
+
+        return redirect()
+            ->route('admin.whatsapp.index')
+            ->with('success', $label.' ('.$queued.') queued.');
+    }
+
+    /**
+     * @param  array<int, int>  $guestIds
      * @return Collection<int, Guest>
      */
     private function guestsForAction(string $phase, string $action, array $guestIds)
     {
         $query = Guest::query()->where('is_approved', true);
+
+        if ($phase === 'thank_you') {
+            $query->whereNotNull('qr_verified_at');
+
+            if ($action === 'selected') {
+                return $query->whereIn('id', $guestIds)->get();
+            }
+
+            return match ($action) {
+                'all_pending' => $query
+                    ->whereNull('whatsapp_thankyou_sent_at')
+                    ->get(),
+                'all_failed' => $query->whereNotNull('whatsapp_thankyou_error')->get(),
+                'all_approved' => $query->get(),
+                default => collect(),
+            };
+        }
 
         if ($action === 'selected') {
             return $query->whereIn('id', $guestIds)->get();
@@ -158,5 +235,12 @@ class WhatsappAdminController extends Controller
         return $action === 'all_approved'
             || in_array($guest->whatsapp_status, ['failed', 'retrying'], true)
             || ($action === 'selected' && $guest->whatsapp_message_id !== null);
+    }
+
+    private function shouldForceThankYou(Guest $guest, string $action): bool
+    {
+        return $action === 'all_approved'
+            || filled($guest->whatsapp_thankyou_error)
+            || ($action === 'selected' && $guest->whatsapp_thankyou_sent_at !== null);
     }
 }

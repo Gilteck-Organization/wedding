@@ -68,8 +68,7 @@ class WhatsappAdminTest extends TestCase
 
         $this->actingAs($user)
             ->post(route('admin.whatsapp.send'), [
-                'phase' => 'access_card',
-                'action' => 'all_failed',
+                'intent' => 'access_card:all_failed',
             ])
             ->assertRedirect(route('admin.whatsapp.index'));
 
@@ -100,8 +99,7 @@ class WhatsappAdminTest extends TestCase
 
         $this->actingAs($user)
             ->post(route('admin.whatsapp.send'), [
-                'phase' => 'reminder',
-                'action' => 'all_pending',
+                'intent' => 'reminder:all_pending',
             ])
             ->assertRedirect(route('admin.whatsapp.index'));
 
@@ -133,8 +131,7 @@ class WhatsappAdminTest extends TestCase
 
         $this->actingAs($user)
             ->post(route('admin.whatsapp.send'), [
-                'phase' => 'access_card',
-                'action' => 'all_ready',
+                'intent' => 'access_card:all_ready',
             ])
             ->assertRedirect(route('admin.whatsapp.index'));
 

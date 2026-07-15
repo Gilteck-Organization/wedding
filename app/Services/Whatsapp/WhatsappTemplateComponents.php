@@ -11,6 +11,24 @@ class WhatsappTemplateComponents
      */
     public static function forReminder(Guest $guest): array
     {
+        return self::bodyNameOnly($guest);
+    }
+
+    /**
+     * Thank-you template (body name only — same shape as reminder).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function forThankYou(Guest $guest): array
+    {
+        return self::bodyNameOnly($guest);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private static function bodyNameOnly(Guest $guest): array
+    {
         $paramName = (string) config('services.whatsapp.template_body_param_name', 'n');
 
         return [

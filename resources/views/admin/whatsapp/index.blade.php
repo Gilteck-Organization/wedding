@@ -6,7 +6,8 @@
             <div>
                 <h1 class="font-serif text-3xl text-[#2c2418]">WhatsApp delivery</h1>
                 <p class="mt-2 text-sm text-[#2c2418]/70">
-                    Step 1: send welcome reminders on approval. Step 2: send access cards when you are ready from this page.
+                    Step 1: welcome reminders. Step 2: access cards. Step 3: thank-you to guests who were checked in at
+                    the door.
                 </p>
             </div>
             <a href="{{ route('admin.rsvps.index') }}"
@@ -23,62 +24,67 @@
 
         @unless ($whatsappConfigured)
             <div class="mt-6 rounded-none border border-[#803b48]/30 bg-[#803b48]/10 px-4 py-3 text-sm text-[#803b48]">
-                WhatsApp is not fully configured. Set <code class="text-xs">WHATSAPP_ACCESS_TOKEN</code>,
+                Reminder / access card WhatsApp is not fully configured. Set
+                <code class="text-xs">WHATSAPP_ACCESS_TOKEN</code>,
                 <code class="text-xs">WHATSAPP_REMINDER_TEMPLATE_NAME</code>, and
                 <code class="text-xs">WHATSAPP_TEMPLATE_NAME</code> in your environment.
             </div>
         @endunless
 
-        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+        @unless ($thankYouConfigured)
+            <div class="mt-4 rounded-none border border-[#803b48]/30 bg-[#803b48]/10 px-4 py-3 text-sm text-[#803b48]">
+                Thank-you WhatsApp is not configured. Set
+                <code class="text-xs">WHATSAPP_THANKYOU_TEMPLATE_NAME=thank_fifi_kiki</code>
+                (plus access token and phone number ID).
+            </div>
+        @endunless
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             <div class="rounded-none border border-[#946112]/20 bg-[#fffdf8]/95 px-4 py-3 shadow-sm">
                 <p class="text-xs font-semibold uppercase tracking-wide text-[#2c2418]/50">Approved</p>
                 <p class="mt-1 font-serif text-2xl text-[#2c2418]">{{ $stats['total'] }}</p>
             </div>
             <div class="rounded-none border border-[#946112]/20 bg-[#fffdf8]/95 px-4 py-3 shadow-sm">
-                <p class="text-xs font-semibold uppercase tracking-wide text-[#2c2418]/50">No reminder yet</p>
-                <p class="mt-1 font-serif text-2xl text-[#2c2418]">{{ $stats['no_reminder'] }}</p>
+                <p class="text-xs font-semibold uppercase tracking-wide text-[#2c2418]/50">Checked in</p>
+                <p class="mt-1 font-serif text-2xl text-[#2c2418]">{{ $stats['attended'] }}</p>
             </div>
             <div class="rounded-none border border-[#946112]/20 bg-[#fffdf8]/95 px-4 py-3 shadow-sm">
-                <p class="text-xs font-semibold uppercase tracking-wide text-[#2c2418]/50">Awaiting card</p>
-                <p class="mt-1 font-serif text-2xl text-[#2c2418]">{{ $stats['reminder_only'] }}</p>
+                <p class="text-xs font-semibold uppercase tracking-wide text-[#2c2418]/50">Thank-you pending</p>
+                <p class="mt-1 font-serif text-2xl text-[#2c2418]">{{ $stats['thankyou_pending'] }}</p>
             </div>
             <div class="rounded-none border border-[#946112]/20 bg-[#fffdf8]/95 px-4 py-3 shadow-sm">
-                <p class="text-xs font-semibold uppercase tracking-wide text-[#2c2418]/50">Cards sent</p>
-                <p class="mt-1 font-serif text-2xl text-[#2c2418]">{{ $stats['cards_sent'] }}</p>
+                <p class="text-xs font-semibold uppercase tracking-wide text-[#2c2418]/50">Thank-you sent</p>
+                <p class="mt-1 font-serif text-2xl text-[#946112]">{{ $stats['thankyou_sent'] }}</p>
             </div>
             <div class="rounded-none border border-[#946112]/20 bg-[#fffdf8]/95 px-4 py-3 shadow-sm">
-                <p class="text-xs font-semibold uppercase tracking-wide text-[#2c2418]/50">Cards delivered</p>
-                <p class="mt-1 font-serif text-2xl text-[#946112]">{{ $stats['cards_delivered'] }}</p>
-            </div>
-            <div class="rounded-none border border-[#946112]/20 bg-[#fffdf8]/95 px-4 py-3 shadow-sm">
-                <p class="text-xs font-semibold uppercase tracking-wide text-[#2c2418]/50">Failed</p>
+                <p class="text-xs font-semibold uppercase tracking-wide text-[#2c2418]/50">Failed (any)</p>
                 <p class="mt-1 font-serif text-2xl text-[#803b48]">{{ $stats['failed'] }}</p>
             </div>
         </div>
 
-        <form action="{{ route('admin.whatsapp.send') }}" method="POST" class="mt-6 space-y-4">
+        <form action="{{ route('admin.whatsapp.send') }}" method="POST" class="mt-6 space-y-4" data-no-wired-loading="true">
             @csrf
 
             <div class="space-y-4">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-wide text-[#2c2418]/60 mb-2">Step 1 — Welcome reminders</p>
                     <div class="flex flex-wrap gap-3">
-                        <button type="submit" name="action" value="all_pending"
+                        <button type="submit" name="intent" value="reminder:all_pending"
                             class="btn-wired px-5 py-2.5 text-xs sm:text-sm"
                             @disabled(! $whatsappConfigured)
-                            onclick="document.getElementById('whatsapp-phase').value='reminder'; return confirm('Send welcome reminders to all guests who have not received one?')">
+                            onclick="return confirm('Send welcome reminders to all guests who have not received one?')">
                             <span class="btn-wired__text">Send pending reminders</span>
                         </button>
-                        <button type="submit" name="action" value="all_failed"
+                        <button type="submit" name="intent" value="reminder:all_failed"
                             class="inline-flex items-center justify-center rounded-none px-5 py-2.5 text-xs font-semibold text-[#803b48] border border-[#803b48]/40 bg-white/70 shadow-sm hover:-translate-y-0.5 transition-all disabled:opacity-50"
                             @disabled(! $whatsappConfigured)
-                            onclick="document.getElementById('whatsapp-phase').value='reminder'; return confirm('Resend failed reminders?')">
+                            onclick="return confirm('Resend failed reminders?')">
                             Resend failed reminders
                         </button>
-                        <button type="submit" name="action" value="selected"
+                        <button type="submit" name="intent" value="reminder:selected"
                             class="inline-flex items-center justify-center rounded-none px-5 py-2.5 text-xs font-semibold text-[#2c2418] border border-[#946112]/40 bg-white/70 shadow-sm hover:-translate-y-0.5 transition-all disabled:opacity-50"
                             @disabled(! $whatsappConfigured)
-                            onclick="document.getElementById('whatsapp-phase').value='reminder'; return confirm('Send reminder to selected guests?')">
+                            onclick="return confirm('Send reminder to selected guests?')">
                             Reminder — selected
                         </button>
                     </div>
@@ -86,35 +92,68 @@
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-wide text-[#2c2418]/60 mb-2">Step 2 — Access cards (after reminders)</p>
                     <div class="flex flex-wrap gap-3">
-                        <button type="submit" name="action" value="all_ready"
+                        <button type="submit" name="intent" value="access_card:all_ready"
                             class="btn-wired px-5 py-2.5 text-xs sm:text-sm"
                             @disabled(! $whatsappConfigured)
-                            onclick="document.getElementById('whatsapp-phase').value='access_card'; return confirm('Send access cards to all guests who received a reminder but not yet a card?')">
+                            onclick="return confirm('Send access cards to all guests who received a reminder but not yet a card?')">
                             <span class="btn-wired__text">Send access cards (ready)</span>
                         </button>
-                        <button type="submit" name="action" value="all_failed"
+                        <button type="submit" name="intent" value="access_card:all_failed"
                             class="inline-flex items-center justify-center rounded-none px-5 py-2.5 text-xs font-semibold text-[#803b48] border border-[#803b48]/40 bg-white/70 shadow-sm hover:-translate-y-0.5 transition-all disabled:opacity-50"
                             @disabled(! $whatsappConfigured)
-                            onclick="document.getElementById('whatsapp-phase').value='access_card'; return confirm('Resend failed access cards?')">
+                            onclick="return confirm('Resend failed access cards?')">
                             Resend failed cards
                         </button>
-                        <button type="submit" name="action" value="selected"
+                        <button type="submit" name="intent" value="access_card:selected"
                             class="inline-flex items-center justify-center rounded-none px-5 py-2.5 text-xs font-semibold text-[#2c2418] border border-[#946112]/40 bg-white/70 shadow-sm hover:-translate-y-0.5 transition-all disabled:opacity-50"
                             @disabled(! $whatsappConfigured)
-                            onclick="document.getElementById('whatsapp-phase').value='access_card'; return confirm('Send access card to selected guests? They must already have a reminder.')">
+                            onclick="return confirm('Send access card to selected guests? They must already have a reminder.')">
                             Access card — selected
                         </button>
-                        <button type="submit" name="action" value="all_approved"
+                        <button type="submit" name="intent" value="access_card:all_approved"
                             class="inline-flex items-center justify-center rounded-none px-5 py-2.5 text-xs font-semibold text-[#2c2418]/70 border border-[#946112]/30 bg-white/60 shadow-sm hover:-translate-y-0.5 transition-all disabled:opacity-50"
                             @disabled(! $whatsappConfigured)
-                            onclick="document.getElementById('whatsapp-phase').value='access_card'; return confirm('Force resend access cards to every guest with a reminder?')">
+                            onclick="return confirm('Force resend access cards to every guest with a reminder?')">
                             Resend all cards
                         </button>
                     </div>
                 </div>
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-[#2c2418]/60 mb-2">
+                        Step 3 — Thank you (only guests scanned at the door)
+                    </p>
+                    <p class="mb-2 text-xs text-[#2c2418]/55">
+                        Uses template <code class="text-[11px]">thank_fifi_kiki</code>. Will not send to guests who were
+                        not checked in.
+                    </p>
+                    <div class="flex flex-wrap gap-3">
+                        <button type="submit" name="intent" value="thank_you:all_pending"
+                            class="btn-wired px-5 py-2.5 text-xs sm:text-sm"
+                            @disabled(! $thankYouConfigured)
+                            onclick="return confirm({{ \Illuminate\Support\Js::from('Send thank-you to all checked-in guests who have not received one yet ('.$stats['thankyou_pending'].')?') }})">
+                            <span class="btn-wired__text">Send thank-you (pending · {{ $stats['thankyou_pending'] }})</span>
+                        </button>
+                        <button type="submit" name="intent" value="thank_you:all_failed"
+                            class="inline-flex items-center justify-center rounded-none px-5 py-2.5 text-xs font-semibold text-[#803b48] border border-[#803b48]/40 bg-white/70 shadow-sm hover:-translate-y-0.5 transition-all disabled:opacity-50"
+                            @disabled(! $thankYouConfigured)
+                            onclick="return confirm('Resend failed thank-you messages?')">
+                            Resend failed thank-you
+                        </button>
+                        <button type="submit" name="intent" value="thank_you:selected"
+                            class="inline-flex items-center justify-center rounded-none px-5 py-2.5 text-xs font-semibold text-[#2c2418] border border-[#946112]/40 bg-white/70 shadow-sm hover:-translate-y-0.5 transition-all disabled:opacity-50"
+                            @disabled(! $thankYouConfigured)
+                            onclick="return confirm('Send thank-you to selected guests? Only checked-in guests will be queued.')">
+                            Thank-you — selected
+                        </button>
+                        <button type="submit" name="intent" value="thank_you:all_approved"
+                            class="inline-flex items-center justify-center rounded-none px-5 py-2.5 text-xs font-semibold text-[#2c2418]/70 border border-[#946112]/30 bg-white/60 shadow-sm hover:-translate-y-0.5 transition-all disabled:opacity-50"
+                            @disabled(! $thankYouConfigured || ($stats['attended'] ?? 0) === 0)
+                            onclick="return confirm({{ \Illuminate\Support\Js::from('Force resend thank-you to ALL '.$stats['attended'].' checked-in guests?') }})">
+                            Resend thank-you to all checked-in
+                        </button>
+                    </div>
+                </div>
             </div>
-            <input type="hidden" name="phase" id="whatsapp-phase" value="reminder">
-
             <div class="rounded-none border border-[#946112]/20 bg-[#fffdf8]/95 shadow">
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm">
@@ -126,10 +165,10 @@
                                 </th>
                                 <th class="px-4 py-3 text-left font-semibold text-[#2c2418]/80">Guest</th>
                                 <th class="px-4 py-3 text-left font-semibold text-[#2c2418]/80">Phone</th>
+                                <th class="px-4 py-3 text-left font-semibold text-[#2c2418]/80">Checked in</th>
                                 <th class="px-4 py-3 text-left font-semibold text-[#2c2418]/80">Reminder</th>
                                 <th class="px-4 py-3 text-left font-semibold text-[#2c2418]/80">Access card</th>
-                                <th class="px-4 py-3 text-left font-semibold text-[#2c2418]/80">Last sent</th>
-                                <th class="px-4 py-3 text-left font-semibold text-[#2c2418]/80">Attempts</th>
+                                <th class="px-4 py-3 text-left font-semibold text-[#2c2418]/80">Thank you</th>
                                 <th class="px-4 py-3 text-left font-semibold text-[#2c2418]/80">Why / error</th>
                                 <th class="px-4 py-3 text-left font-semibold text-[#2c2418]/80">Card</th>
                             </tr>
@@ -151,7 +190,19 @@
                                         : ($guest->whatsapp_reminder_sent_at
                                             ? ['Sent', 'bg-[#946112]/12 text-[#946112] border-[#946112]/40']
                                             : ['Not sent', 'bg-white/50 text-[#2c2418]/40 border-[#946112]/15']);
-                                    $reason = $guest->whatsapp_reminder_error ?: $guest->whatsapp_error;
+                                    $thankYouLabel = filled($guest->whatsapp_thankyou_error)
+                                        ? ['Failed', 'bg-[#803b48]/15 text-[#803b48] border-[#803b48]/40']
+                                        : ($guest->whatsapp_thankyou_sent_at
+                                            ? ['Sent', 'bg-[#946112]/12 text-[#946112] border-[#946112]/40']
+                                            : ($guest->isQrVerified()
+                                                ? ['Pending', 'bg-white/60 text-[#2c2418]/70 border-[#946112]/30']
+                                                : ['—', 'bg-white/50 text-[#2c2418]/40 border-[#946112]/15']));
+                                    $checkedInLabel = $guest->isQrVerified()
+                                        ? ['Yes', 'bg-[#946112]/12 text-[#946112] border-[#946112]/40']
+                                        : ['No', 'bg-white/50 text-[#2c2418]/40 border-[#946112]/15'];
+                                    $reason = $guest->whatsapp_thankyou_error
+                                        ?: $guest->whatsapp_reminder_error
+                                        ?: $guest->whatsapp_error;
                                     if ($reason === null && $guest->whatsapp_reminder_sent_at === null && $waStatus === null) {
                                         $reason = 'Not queued yet';
                                     } elseif ($reason === null && in_array($waStatus, ['sent', 'delivered', 'read'], true)) {
@@ -169,6 +220,13 @@
                                     <td class="px-4 py-3 text-[#2c2418]">{{ $guest->phone }}</td>
                                     <td class="px-4 py-3">
                                         <span
+                                            class="inline-flex items-center rounded-none border px-3 py-1 text-[11px] font-semibold {{ $checkedInLabel[1] }}"
+                                            @if ($guest->qr_verified_at) title="{{ $guest->qr_verified_at->format('M d, Y g:i A') }}" @endif>
+                                            {{ $checkedInLabel[0] }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span
                                             class="inline-flex items-center rounded-none border px-3 py-1 text-[11px] font-semibold {{ $reminderLabel[1] }}">
                                             {{ $reminderLabel[0] }}
                                         </span>
@@ -179,10 +237,12 @@
                                             {{ $waPill[0] }}
                                         </span>
                                     </td>
-                                    <td class="px-4 py-3 text-[#2c2418]/80">
-                                        {{ optional($guest->whatsapp_last_sent_at)->format('M d, Y g:i A') ?? '—' }}
+                                    <td class="px-4 py-3">
+                                        <span
+                                            class="inline-flex items-center rounded-none border px-3 py-1 text-[11px] font-semibold {{ $thankYouLabel[1] }}">
+                                            {{ $thankYouLabel[0] }}
+                                        </span>
                                     </td>
-                                    <td class="px-4 py-3 text-[#2c2418]/80">{{ $guest->whatsapp_attempts }}</td>
                                     <td class="px-4 py-3 text-xs text-[#803b48] max-w-xs break-words">
                                         {{ $reason }}
                                     </td>

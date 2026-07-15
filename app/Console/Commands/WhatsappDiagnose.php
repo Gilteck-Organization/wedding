@@ -18,6 +18,7 @@ class WhatsappDiagnose extends Command
         $wabaId = (string) config('services.whatsapp.business_account_id');
         $templateName = (string) config('services.whatsapp.template_name');
         $reminderTemplateName = (string) config('services.whatsapp.reminder_template_name');
+        $thankYouTemplateName = (string) config('services.whatsapp.thankyou_template_name');
         $version = (string) config('services.whatsapp.graph_version', 'v21.0');
 
         if ($token === '') {
@@ -103,6 +104,20 @@ class WhatsappDiagnose extends Command
             } else {
                 $this->line('  Access card template OK: '.$templateName.' ('.($template['status'] ?? '?').')');
                 $this->line('  Body param format: '.($template['parameter_format'] ?? 'POSITIONAL'));
+            }
+        }
+
+        if ($thankYouTemplateName !== '' && $wabaId !== '') {
+            $templates = Http::withToken($token)
+                ->get("https://graph.facebook.com/{$version}/{$wabaId}/message_templates", [
+                    'name' => $thankYouTemplateName,
+                ])
+                ->json();
+            $template = $templates['data'][0] ?? null;
+            if ($template === null) {
+                $this->warn("  Thank-you template '{$thankYouTemplateName}' not found on WABA.");
+            } else {
+                $this->line('  Thank-you template OK: '.$thankYouTemplateName.' ('.($template['status'] ?? '?').')');
             }
         }
 

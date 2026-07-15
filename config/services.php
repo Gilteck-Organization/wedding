@@ -43,6 +43,7 @@ return [
         'verify_token' => env('WHATSAPP_VERIFY_TOKEN'),
         'template_name' => env('WHATSAPP_TEMPLATE_NAME'),
         'reminder_template_name' => env('WHATSAPP_REMINDER_TEMPLATE_NAME'),
+        'thankyou_template_name' => env('WHATSAPP_THANKYOU_TEMPLATE_NAME', 'thank_fifi_kiki'),
         'template_language' => env('WHATSAPP_TEMPLATE_LANGUAGE', 'en'),
         'template_body_param_name' => env('WHATSAPP_TEMPLATE_BODY_PARAM_NAME', 'n'),
         'template_url_button' => env('WHATSAPP_TEMPLATE_URL_BUTTON', true),

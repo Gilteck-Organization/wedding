@@ -26,10 +26,41 @@ class WhatsappSendGuard
         }
     }
 
+    /**
+     * Credentials + thank-you template only (does not require reminder/access-card templates).
+     *
+     * @throws WhatsappException
+     */
+    public static function assertThankYouConfigured(): void
+    {
+        if ((string) config('services.whatsapp.access_token') === '') {
+            throw new WhatsappException('WHATSAPP_ACCESS_TOKEN is not set.');
+        }
+
+        if ((string) config('services.whatsapp.phone_number_id') === '') {
+            throw new WhatsappException('WHATSAPP_PHONE_NUMBER_ID is not set.');
+        }
+
+        if ((string) config('services.whatsapp.thankyou_template_name') === '') {
+            throw new WhatsappException('WHATSAPP_THANKYOU_TEMPLATE_NAME is not set.');
+        }
+    }
+
     public static function isConfigured(): bool
     {
         try {
             self::assertConfigured();
+        } catch (WhatsappException) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public static function isThankYouConfigured(): bool
+    {
+        try {
+            self::assertThankYouConfigured();
         } catch (WhatsappException) {
             return false;
         }
